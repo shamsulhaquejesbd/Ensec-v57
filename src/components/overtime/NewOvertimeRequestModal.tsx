@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   ShieldAlert,
   Info,
+  Search,
 } from 'lucide-react';
 import {
   OvertimePurposeCategory,
@@ -53,13 +54,33 @@ export const NewOvertimeRequestModal: React.FC<NewOvertimeRequestModalProps> = (
     formatCurrency,
   } = useERP();
 
-  // Selected Employee
+  // Selected Employee & Search
+  const [employeeSearch, setEmployeeSearch] = useState<string>('');
   const [employeeId, setEmployeeId] = useState<string>(
     initialEmployeeId || (fieldForceReps[0]?.id || '')
   );
 
+  const filteredEmployees = useMemo(() => {
+    const q = employeeSearch.trim().toLowerCase();
+    if (!q) return fieldForceReps;
+    return fieldForceReps.filter((rep) => {
+      const deptText = Array.isArray(rep.departments) && rep.departments.length > 0
+        ? rep.departments.join(' ')
+        : rep.department || '';
+      return (
+        (rep.name || '').toLowerCase().includes(q) ||
+        (rep.nativeName || '').toLowerCase().includes(q) ||
+        (rep.code || '').toLowerCase().includes(q) ||
+        (rep.designation || '').toLowerCase().includes(q) ||
+        (rep.phone || '').toLowerCase().includes(q) ||
+        deptText.toLowerCase().includes(q)
+      );
+    });
+  }, [fieldForceReps, employeeSearch]);
+
   const selectedEmployee = useMemo(() => {
-    return fieldForceReps.find((r) => r.id === employeeId) || fieldForceReps[0] || null;
+    if (!employeeId) return null;
+    return fieldForceReps.find((r) => r.id === employeeId) || null;
   }, [fieldForceReps, employeeId]);
 
   // Selected Production Order & Batch
@@ -223,21 +244,82 @@ export const NewOvertimeRequestModal: React.FC<NewOvertimeRequestModalProps> = (
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
           {/* Employee Selection */}
           <div className="space-y-1.5">
-            <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-blue-600" />
-              <span>Select Employee (Existing Employee Master) *</span>
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-blue-600" />
+                <span>Select Employee (Existing Employee Master) *</span>
+              </label>
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                {filteredEmployees.length} of {fieldForceReps.length} employees
+              </span>
+            </div>
+
+            {/* Employee Search Bar */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={employeeSearch}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEmployeeSearch(val);
+                  const q = val.trim().toLowerCase();
+                  const matches = !q
+                    ? fieldForceReps
+                    : fieldForceReps.filter((rep) => {
+                        const deptText = Array.isArray(rep.departments) && rep.departments.length > 0
+                          ? rep.departments.join(' ')
+                          : rep.department || '';
+                        return (
+                          (rep.name || '').toLowerCase().includes(q) ||
+                          (rep.nativeName || '').toLowerCase().includes(q) ||
+                          (rep.code || '').toLowerCase().includes(q) ||
+                          (rep.designation || '').toLowerCase().includes(q) ||
+                          (rep.phone || '').toLowerCase().includes(q) ||
+                          deptText.toLowerCase().includes(q)
+                        );
+                      });
+                  if (matches.length === 0) {
+                    setEmployeeId('');
+                  } else if (!matches.some((m) => m.id === employeeId)) {
+                    setEmployeeId(matches[0].id);
+                  }
+                }}
+                placeholder="Search employee by name, code, designation, department, or phone..."
+                className="w-full py-2 pl-8 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500"
+              />
+              {employeeSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmployeeSearch('');
+                    if (!employeeId && fieldForceReps.length > 0) {
+                      setEmployeeId(initialEmployeeId || fieldForceReps[0].id);
+                    }
+                  }}
+                  title="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
             <select
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
               required
               className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500"
             >
-              {fieldForceReps.map((rep) => (
-                <option key={rep.id} value={rep.id}>
-                  {rep.name} ({rep.code || 'EMP'}) — {rep.designation || 'Staff'} • {rep.department || 'Operations'}
-                </option>
-              ))}
+              {filteredEmployees.length === 0 ? (
+                <option value="">No employees match "{employeeSearch}"</option>
+              ) : (
+                filteredEmployees.map((rep) => (
+                  <option key={rep.id} value={rep.id}>
+                    {rep.name} ({rep.code || 'EMP'}) — {rep.designation || 'Staff'} • {rep.department || 'Operations'}
+                  </option>
+                ))
+              )}
             </select>
             {selectedEmployee && employeePolicy && (
               <div className="space-y-2">
