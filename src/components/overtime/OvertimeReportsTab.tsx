@@ -175,15 +175,15 @@ export const OvertimeReportsTab: React.FC = () => {
     if (hasUserChangedMonthRef.current || !monthFilter) return;
     const allDates: string[] = [];
     overtimeRequests.forEach((r) => {
-      if (r.status !== 'Rejected' && r.status !== 'Cancelled' && r.overtimeDate) {
+      if (r.status === 'Final Approved' && r.overtimeDate) {
         allDates.push(r.overtimeDate);
       }
     });
     overtimeAttendances.forEach((a) => {
-      if (a.date) allDates.push(a.date);
+      if (!a.requestId && a.date) allDates.push(a.date);
     });
     (overtimeRecords || []).forEach((o) => {
-      if (o.status !== 'Rejected' && o.date) allDates.push(o.date);
+      if (o.status === 'Approved' && o.date) allDates.push(o.date);
     });
     (attendanceRecords || []).forEach((a) => {
       if (Number(a.overtimeHours) > 0 && a.date) allDates.push(a.date);
@@ -270,9 +270,29 @@ export const OvertimeReportsTab: React.FC = () => {
     });
   }, [activeYearNum, activeMonthNum]);
 
+  const stripDepartmentCode = (raw: string): string => {
+    let result = String(raw || '').trim();
+    if (!result) return '';
+    const matchedDept = (departments || []).find((d) => {
+      const code = String(d.code || '').trim();
+      return Boolean(code) && result.toUpperCase().startsWith(code.toUpperCase());
+    });
+    if (matchedDept?.code) {
+      const escapedCode = matchedDept.code.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const withoutCode = result
+        .replace(new RegExp(`^${escapedCode}\\s*[-–—:]?\\s*`, 'i'), '')
+        .trim();
+      if (withoutCode) {
+        result = withoutCode;
+      }
+    }
+    const stripped = result.replace(/^[A-Z]{1,6}-\d+\s*[-–—:]\s*/i, '').trim();
+    return stripped || result;
+  };
+
   const companyDisplayName =
     departmentFilter !== 'all'
-      ? departmentFilter
+      ? stripDepartmentCode(departmentFilter)
       : orgHierarchy?.name?.trim() || 'Stern Industrise LTD';
 
   // Generate Report 2: Daily Overtime Bill Factory sheet (Department-wise Overtime Report)
@@ -284,7 +304,7 @@ export const OvertimeReportsTab: React.FC = () => {
     };
 
     const activeReqs = overtimeRequests.filter((r) => {
-      if (r.status === 'Rejected' || r.status === 'Cancelled') return false;
+      if (r.status !== 'Final Approved') return false;
       if (!matchesPeriod(r.overtimeDate)) return false;
       if (employeeFilter !== 'all') {
         if (selectedEmployeeFilterObj) {
@@ -296,10 +316,8 @@ export const OvertimeReportsTab: React.FC = () => {
       return true;
     });
 
-    const activeReqIds = new Set(activeReqs.map((r) => r.id));
-
     const activeAtts = overtimeAttendances.filter((a) => {
-      if (a.requestId && activeReqIds.has(a.requestId)) return false; // already accounted for via linked request
+      if (a.requestId) return false; // Linked OT request attendances are only included when the request itself is Final Approved
       if (!matchesPeriod(a.date)) return false;
       if (employeeFilter !== 'all') {
         if (selectedEmployeeFilterObj) {
@@ -312,7 +330,7 @@ export const OvertimeReportsTab: React.FC = () => {
     });
 
     const activeLegacyRecs = (overtimeRecords || []).filter((o) => {
-      if (o.status === 'Rejected') return false;
+      if (o.status !== 'Approved') return false;
       if (!matchesPeriod(o.date || o.monthYear)) return false;
       if (employeeFilter !== 'all') {
         if (selectedEmployeeFilterObj) {
