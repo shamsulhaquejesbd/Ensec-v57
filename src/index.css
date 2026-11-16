@@ -109,3 +109,26 @@ input[type="number"] {
   height: 0 !important;
 }
 
+@page ot-bill-landscape {
+  size: landscape;
+  margin: 6mm;
+}
+
+@media print {
+  body.printing-ot-bill * {
+    visibility: hidden;
+  }
+  body.printing-ot-bill #dept-ot-bill-sheet,
+  body.printing-ot-bill #dept-ot-bill-sheet * {
+    visibility: visible;
+  }
+  body.printing-ot-bill #dept-ot-bill-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    overflow: visible !important;
+    page: ot-bill-landscape;
+  }
+}
+

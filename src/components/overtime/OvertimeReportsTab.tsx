@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useERP } from '../../context/ERPContext';
+import { calculateEmployeeIndividualOvertime } from '../../types/overtime';
 import * as XLSX from 'xlsx';
 import { 
   FileSpreadsheet, 
@@ -12,22 +13,197 @@ import {
   Building2, 
   Layers, 
   Coins, 
-  CheckCircle2, 
-  Clock 
+  Clock,
+  Printer
 } from 'lucide-react';
 
+interface DeptBillRow {
+  sn: number;
+  empId: string;
+  name: string;
+  department: string;
+  gender: string;
+  monthlySalary: number;
+  workDay: number;
+  ratePerDay: number;
+  ratePerHour: number;
+  dailyHours: number[]; // length 31 (index 0 = day 1 ... index 30 = day 31)
+  totalHours: number;
+  totalAmount: number;
+  mobileNo: string;
+}
+
+const numberToWordsSimple = (rawAmount: number): string => {
+  const amount = Math.max(0, Math.round(rawAmount));
+  if (amount === 0) return 'Zero';
+
+  const single = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  const teen = [
+    'Ten',
+    'Eleven',
+    'Twelve',
+    'Thirteen',
+    'Fourteen',
+    'Fifteen',
+    'Sixteen',
+    'Seventeen',
+    'Eighteen',
+    'Nineteen',
+  ];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  const formatHundreds = (n: number): string => {
+    let str = '';
+    if (n > 99) {
+      str += `${single[Math.floor(n / 100)]} Hundred `;
+      n %= 100;
+    }
+    if (n > 19) {
+      str += `${tens[Math.floor(n / 10)]} `;
+      n %= 10;
+    }
+    if (n > 9) {
+      str += `${teen[n - 10]} `;
+      n = 0;
+    }
+    if (n > 0) {
+      str += `${single[n]} `;
+    }
+    return str.trim();
+  };
+
+  let remAmt = amount;
+  let words = '';
+  const crore = Math.floor(remAmt / 10000000);
+  remAmt %= 10000000;
+  const lakh = Math.floor(remAmt / 100000);
+  remAmt %= 100000;
+  const thousand = Math.floor(remAmt / 1000);
+  remAmt %= 1000;
+
+  if (crore > 0) words += `${formatHundreds(crore)} Crore `;
+  if (lakh > 0) words += `${formatHundreds(lakh)} Lakh `;
+  if (thousand > 0) words += `${formatHundreds(thousand)} Thousand `;
+  if (remAmt > 0) words += `${formatHundreds(remAmt)} `;
+
+  return words.trim();
+};
+
+const formatHoursValue = (val: number): string => {
+  if (!val) return '0';
+  return Number.isInteger(val) ? String(val) : String(Number(val.toFixed(2)));
+};
+
+const extractYMD = (raw?: string): { ym: string; day: number; ymd: string } | null => {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+
+  // YYYY-MM-DD or YYYY-M-D or YYYY/MM/DD or ISO string starting with YYYY-MM-DD
+  let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (m) {
+    const y = m[1];
+    const mo = m[2].padStart(2, '0');
+    const d = Number(m[3]);
+    if (d >= 1 && d <= 31) {
+      return { ym: `${y}-${mo}`, day: d, ymd: `${y}-${mo}-${String(d).padStart(2, '0')}` };
+    }
+  }
+
+  // DD-MM-YYYY or DD/MM/YYYY
+  m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (m) {
+    const d = Number(m[1]);
+    const mo = m[2].padStart(2, '0');
+    const y = m[3];
+    if (d >= 1 && d <= 31) {
+      return { ym: `${y}-${mo}`, day: d, ymd: `${y}-${mo}-${String(d).padStart(2, '0')}` };
+    }
+  }
+
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) {
+    const y = String(dt.getFullYear());
+    const mo = String(dt.getMonth() + 1).padStart(2, '0');
+    const d = dt.getDate();
+    return { ym: `${y}-${mo}`, day: d, ymd: `${y}-${mo}-${String(d).padStart(2, '0')}` };
+  }
+  return null;
+};
+
+const normStr = (v?: string) => String(v || '').trim().toLowerCase();
+
+const matchesEmpIdentity = (
+  emp: { id?: string; code?: string; name?: string },
+  rec: { employeeId?: string; fieldForceId?: string; employeeCode?: string; employeeName?: string }
+): boolean => {
+  const eId = normStr(emp.id);
+  const eCode = normStr(emp.code);
+  const eName = normStr(emp.name);
+  const rId = normStr(rec.employeeId);
+  const rFfId = normStr(rec.fieldForceId);
+  const rCode = normStr(rec.employeeCode);
+  const rName = normStr(rec.employeeName);
+
+  if (eId && (rId === eId || rFfId === eId || rCode === eId)) return true;
+  if (eCode && (rCode === eCode || rId === eCode || rFfId === eCode)) return true;
+  if (eName && rName && rName === eName) return true;
+  return false;
+};
+
 export const OvertimeReportsTab: React.FC = () => {
-  const { overtimeRequests, fieldForceReps, productionOrders } = useERP();
+  const {
+    overtimeRequests,
+    overtimeAttendances,
+    overtimeRecords,
+    attendanceRecords,
+    fieldForceReps,
+    salaryStructures,
+    productionOrders,
+    getEmployeeEffectiveOvertimePolicy,
+    orgHierarchy,
+  } = useERP();
 
   const [activeReport, setActiveReport] = useState<number>(1);
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState(() => new Date().toISOString().slice(0, 7));
   const [employeeFilter, setEmployeeFilter] = useState('all');
+  const hasUserChangedMonthRef = useRef(false);
+
+  // If the default current month has no overtime data yet while another month does, auto-select the latest month with OT data
+  useEffect(() => {
+    if (hasUserChangedMonthRef.current || !monthFilter) return;
+    const allDates: string[] = [];
+    overtimeRequests.forEach((r) => {
+      if (r.status !== 'Rejected' && r.status !== 'Cancelled' && r.overtimeDate) {
+        allDates.push(r.overtimeDate);
+      }
+    });
+    overtimeAttendances.forEach((a) => {
+      if (a.date) allDates.push(a.date);
+    });
+    (overtimeRecords || []).forEach((o) => {
+      if (o.status !== 'Rejected' && o.date) allDates.push(o.date);
+    });
+    (attendanceRecords || []).forEach((a) => {
+      if (Number(a.overtimeHours) > 0 && a.date) allDates.push(a.date);
+    });
+
+    const parsedYms = allDates
+      .map((d) => extractYMD(d)?.ym)
+      .filter((ym): ym is string => Boolean(ym));
+
+    if (parsedYms.length > 0 && !parsedYms.includes(monthFilter)) {
+      const latestYm = Array.from(new Set(parsedYms)).sort().pop();
+      if (latestYm) {
+        setMonthFilter(latestYm);
+      }
+    }
+  }, [overtimeRequests, overtimeAttendances, overtimeRecords, attendanceRecords, monthFilter]);
 
   // List of 7 reports requested
   const reportsList = [
     { id: 1, name: 'Employee-wise Monthly Overtime Report', icon: Users, desc: 'Aggregated monthly overtime hours, wage rates, and earnings per worker' },
-    { id: 2, name: 'Department-wise Overtime Report', icon: Building2, desc: 'Hours and cost breakdown across Production Assembly, QC, Maintenance, etc.' },
+    { id: 2, name: 'Department-wise Overtime Report', icon: Building2, desc: 'Daily Overtime Bill Factory sheet with 31-day breakdown, rates & signatures' },
     { id: 3, name: 'Production Batch-wise Overtime Cost Report', icon: Layers, desc: 'Direct OT cost absorbed per manufactured battery batch' },
     { id: 4, name: 'Production Order-wise Overtime Cost Report', icon: FileText, desc: 'Overtime expense absorbed per Production Work Order' },
     { id: 5, name: 'Monthly Overtime Payroll Reconciliation Report', icon: Coins, desc: 'Payable overtime amounts audited against salary sheets' },
@@ -42,23 +218,470 @@ export const OvertimeReportsTab: React.FC = () => {
       'Quality Control',
       'Plant Maintenance',
       ...fieldForceReps.map((r) => r.department).filter(Boolean) as string[],
+      ...fieldForceReps.flatMap((r) => r.departments || []).filter(Boolean),
       ...overtimeRequests.map((r) => r.department).filter(Boolean),
     ])
   );
 
+  const selectedEmployeeFilterObj = useMemo(
+    () => (employeeFilter === 'all' ? null : fieldForceReps.find((r) => r.id === employeeFilter) || null),
+    [employeeFilter, fieldForceReps]
+  );
+
   const filteredRequests = overtimeRequests.filter((r) => {
-    if (monthFilter && !String(r.overtimeDate || '').startsWith(monthFilter)) return false;
+    const parsed = extractYMD(r.overtimeDate);
+    if (monthFilter && (parsed ? parsed.ym !== monthFilter : !String(r.overtimeDate || '').startsWith(monthFilter))) {
+      return false;
+    }
     if (departmentFilter !== 'all' && r.department !== departmentFilter) return false;
-    if (employeeFilter !== 'all' && r.employeeId !== employeeFilter) return false;
+    if (employeeFilter !== 'all') {
+      if (selectedEmployeeFilterObj) {
+        if (!matchesEmpIdentity(selectedEmployeeFilterObj, r)) return false;
+      } else if (r.employeeId !== employeeFilter) {
+        return false;
+      }
+    }
     return true;
   });
 
+  // Active month metadata for the 31-day Daily Overtime Bill Factory sheet
+  const activeYearMonth = monthFilter || new Date().toISOString().slice(0, 7);
+  const [activeYearNum, activeMonthNum] = useMemo(() => {
+    const parts = activeYearMonth.split('-');
+    const y = Number(parts[0]) || new Date().getFullYear();
+    const m = Number(parts[1]) || new Date().getMonth() + 1;
+    return [y, m];
+  }, [activeYearMonth]);
+
+  const monthHeadingLabel = useMemo(() => {
+    if (!monthFilter) return 'All Months';
+    const dt = new Date(activeYearNum, activeMonthNum - 1, 1);
+    const monthName = dt.toLocaleString('en-US', { month: 'long' });
+    return `${monthName}-${activeYearNum}`;
+  }, [monthFilter, activeYearNum, activeMonthNum]);
+
+  const dayHeaders = useMemo(() => {
+    const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return Array.from({ length: 31 }, (_, i) => {
+      const dayNum = i + 1;
+      const dt = new Date(activeYearNum, activeMonthNum - 1, dayNum);
+      return {
+        day: dayNum,
+        weekday: shortWeekdays[dt.getDay()],
+      };
+    });
+  }, [activeYearNum, activeMonthNum]);
+
+  const companyDisplayName = orgHierarchy?.name?.trim() || 'Stern Industrise LTD';
+
+  // Generate Report 2: Daily Overtime Bill Factory sheet (Department-wise Overtime Report)
+  const deptOvertimeSheet = useMemo(() => {
+    const matchesPeriod = (rawDate?: string) => {
+      if (!monthFilter) return true;
+      const parsed = extractYMD(rawDate);
+      return parsed ? parsed.ym === monthFilter : String(rawDate || '').startsWith(monthFilter);
+    };
+
+    const activeReqs = overtimeRequests.filter((r) => {
+      if (r.status === 'Rejected' || r.status === 'Cancelled') return false;
+      if (!matchesPeriod(r.overtimeDate)) return false;
+      if (employeeFilter !== 'all') {
+        if (selectedEmployeeFilterObj) {
+          if (!matchesEmpIdentity(selectedEmployeeFilterObj, r)) return false;
+        } else if (r.employeeId !== employeeFilter) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const activeReqIds = new Set(activeReqs.map((r) => r.id));
+
+    const activeAtts = overtimeAttendances.filter((a) => {
+      if (a.requestId && activeReqIds.has(a.requestId)) return false; // already accounted for via linked request
+      if (!matchesPeriod(a.date)) return false;
+      if (employeeFilter !== 'all') {
+        if (selectedEmployeeFilterObj) {
+          if (!matchesEmpIdentity(selectedEmployeeFilterObj, a)) return false;
+        } else if (a.employeeId !== employeeFilter) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const activeLegacyRecs = (overtimeRecords || []).filter((o) => {
+      if (o.status === 'Rejected') return false;
+      if (!matchesPeriod(o.date || o.monthYear)) return false;
+      if (employeeFilter !== 'all') {
+        if (selectedEmployeeFilterObj) {
+          if (!matchesEmpIdentity(selectedEmployeeFilterObj, o)) return false;
+        } else if (o.employeeId !== employeeFilter) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const activeDailyAttOT = (attendanceRecords || []).filter((a) => {
+      if (!(Number(a.overtimeHours) > 0)) return false;
+      if (!matchesPeriod(a.date)) return false;
+      if (employeeFilter !== 'all') {
+        if (selectedEmployeeFilterObj) {
+          if (!matchesEmpIdentity(selectedEmployeeFilterObj, a)) return false;
+        } else if (a.employeeId !== employeeFilter && a.fieldForceId !== employeeFilter) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    type EmpSeed = {
+      id: string;
+      code: string;
+      name: string;
+      department: string;
+      gender: string;
+      basicSalaryBDT: number;
+      phone: string;
+    };
+
+    const empMap = new Map<string, EmpSeed>();
+
+    fieldForceReps.forEach((rep) => {
+      const deptMatch =
+        departmentFilter === 'all' ||
+        rep.department === departmentFilter ||
+        (Array.isArray(rep.departments) && rep.departments.includes(departmentFilter));
+      const empMatch = employeeFilter === 'all' || rep.id === employeeFilter;
+      if (!deptMatch || !empMatch) return;
+
+      const str = salaryStructures.find(
+        (s) => s.employeeId === rep.id || (rep.code && s.employeeId === rep.code)
+      );
+      empMap.set(rep.id, {
+        id: rep.id,
+        code: rep.code || rep.id,
+        name: rep.name || 'Worker',
+        department: rep.department || rep.departments?.[0] || '-',
+        gender: rep.gender || '-',
+        basicSalaryBDT: Number(str?.basicSalaryBDT ?? rep.basicSalaryBDT ?? 0),
+        phone: rep.phone || '',
+      });
+    });
+
+    const findMatchingSeed = (rec: {
+      employeeId?: string;
+      fieldForceId?: string;
+      employeeCode?: string;
+      employeeName?: string;
+    }) => {
+      for (const seed of empMap.values()) {
+        if (matchesEmpIdentity(seed, rec)) return seed;
+      }
+      return undefined;
+    };
+
+    const ensureEmployeeSeed = (rec: {
+      employeeId?: string;
+      fieldForceId?: string;
+      employeeCode?: string;
+      employeeName?: string;
+      department?: string;
+      basicSalaryBDT?: number;
+    }) => {
+      if (findMatchingSeed(rec)) return;
+      const matchedRep = fieldForceReps.find((r) => matchesEmpIdentity(r, rec));
+      const repDept = matchedRep?.department || matchedRep?.departments?.[0] || rec.department || '-';
+      if (
+        departmentFilter !== 'all' &&
+        repDept !== departmentFilter &&
+        rec.department !== departmentFilter &&
+        !(matchedRep?.departments || []).includes(departmentFilter)
+      ) {
+        return;
+      }
+      const key = matchedRep?.id || rec.employeeId || rec.employeeCode || rec.employeeName || '';
+      if (!key || empMap.has(key)) return;
+      const str = salaryStructures.find(
+        (s) => s.employeeId === key || (matchedRep?.code && s.employeeId === matchedRep.code)
+      );
+      empMap.set(key, {
+        id: key,
+        code: matchedRep?.code || rec.employeeCode || key,
+        name: matchedRep?.name || rec.employeeName || 'Worker',
+        department: repDept,
+        gender: matchedRep?.gender || '-',
+        basicSalaryBDT: Number(str?.basicSalaryBDT ?? rec.basicSalaryBDT ?? matchedRep?.basicSalaryBDT ?? 0),
+        phone: matchedRep?.phone || '',
+      });
+    };
+
+    activeReqs.forEach(ensureEmployeeSeed);
+    activeAtts.forEach(ensureEmployeeSeed);
+    activeLegacyRecs.forEach(ensureEmployeeSeed);
+    activeDailyAttOT.forEach(ensureEmployeeSeed);
+
+    const sortedEmployees = Array.from(empMap.values()).sort((a, b) =>
+      String(a.code).localeCompare(String(b.code), undefined, { numeric: true })
+    );
+
+    const rows: DeptBillRow[] = sortedEmployees.map((emp, index) => {
+      const policy = getEmployeeEffectiveOvertimePolicy(emp.id, `${activeYearMonth}-01`);
+      const standardHours = Number(policy?.standardMonthlyWorkingHours) || 208;
+      const workDay = Math.max(1, Math.round(standardHours / 8));
+      const monthlySalary = Math.round(emp.basicSalaryBDT || 0);
+      const ratePerDay = workDay > 0 ? Math.round(monthlySalary / workDay) : 0;
+      const baseHourlyRate =
+        policy?.calculationBasis === 'Fixed Hourly Rate'
+          ? Number(policy?.fixedHourlyRateBDT) || 0
+          : standardHours > 0
+            ? monthlySalary / standardHours
+            : 0;
+      const ratePerHour = Math.round(baseHourlyRate);
+
+      const dailyHours = new Array(31).fill(0);
+      let totalHours = 0;
+      let totalAmount = 0;
+      const coveredDates = new Set<string>();
+
+      const empReqs = activeReqs.filter((r) => matchesEmpIdentity(emp, r));
+      empReqs.forEach((req) => {
+        const parsed = extractYMD(req.overtimeDate);
+        const linkedAtt = overtimeAttendances.find((a) => a.requestId && a.requestId === req.id);
+        const attHrs = linkedAtt
+          ? Number(linkedAtt.actualOvertimeHours) > 0
+            ? Number(linkedAtt.actualOvertimeHours)
+            : Number(linkedAtt.rawCalculatedHours || 0)
+          : 0;
+        const hrs =
+          Number(req.actualOvertimeHours) > 0
+            ? Number(req.actualOvertimeHours)
+            : attHrs > 0
+              ? attHrs
+              : Number(req.expectedHours || 0);
+
+        if (parsed) {
+          coveredDates.add(parsed.ymd);
+          if (parsed.day >= 1 && parsed.day <= 31 && hrs > 0) {
+            dailyHours[parsed.day - 1] += hrs;
+          }
+        }
+        totalHours += hrs;
+        if (
+          req.calculatedOvertimeAmountBDT !== undefined &&
+          req.calculatedOvertimeAmountBDT !== null
+        ) {
+          totalAmount += Number(req.calculatedOvertimeAmountBDT) || 0;
+        } else {
+          const calc = calculateEmployeeIndividualOvertime(monthlySalary, policy, hrs);
+          totalAmount += calc.totalAmountBDT;
+        }
+      });
+
+      const empAtts = activeAtts.filter((a) => matchesEmpIdentity(emp, a));
+      empAtts.forEach((att) => {
+        const parsed = extractYMD(att.date);
+        const hrs =
+          Number(att.actualOvertimeHours) > 0
+            ? Number(att.actualOvertimeHours)
+            : Number(att.rawCalculatedHours || 0);
+        if (parsed) {
+          coveredDates.add(parsed.ymd);
+          if (parsed.day >= 1 && parsed.day <= 31 && hrs > 0) {
+            dailyHours[parsed.day - 1] += hrs;
+          }
+        }
+        totalHours += hrs;
+        const calc = calculateEmployeeIndividualOvertime(monthlySalary, policy, hrs);
+        totalAmount += calc.totalAmountBDT;
+      });
+
+      const empLegacy = activeLegacyRecs.filter((o) => matchesEmpIdentity(emp, o));
+      empLegacy.forEach((ot) => {
+        const parsed = extractYMD(ot.date);
+        if (parsed && coveredDates.has(parsed.ymd)) return;
+        const hrs = Number(ot.hours || 0);
+        if (parsed) {
+          coveredDates.add(parsed.ymd);
+          if (parsed.day >= 1 && parsed.day <= 31 && hrs > 0) {
+            dailyHours[parsed.day - 1] += hrs;
+          }
+        }
+        totalHours += hrs;
+        if (ot.totalAmountBDT !== undefined && ot.totalAmountBDT !== null) {
+          totalAmount += Number(ot.totalAmountBDT) || 0;
+        } else {
+          const calc = calculateEmployeeIndividualOvertime(monthlySalary, policy, hrs);
+          totalAmount += calc.totalAmountBDT;
+        }
+      });
+
+      const empDailyAtt = activeDailyAttOT.filter((a) => matchesEmpIdentity(emp, a));
+      empDailyAtt.forEach((att) => {
+        const parsed = extractYMD(att.date);
+        if (parsed && coveredDates.has(parsed.ymd)) return;
+        const hrs = Number(att.overtimeHours || 0);
+        if (parsed) {
+          coveredDates.add(parsed.ymd);
+          if (parsed.day >= 1 && parsed.day <= 31 && hrs > 0) {
+            dailyHours[parsed.day - 1] += hrs;
+          }
+        }
+        totalHours += hrs;
+        const calc = calculateEmployeeIndividualOvertime(monthlySalary, policy, hrs);
+        totalAmount += calc.totalAmountBDT;
+      });
+
+      return {
+        sn: index + 1,
+        empId: emp.code,
+        name: emp.name,
+        department: emp.department,
+        gender: emp.gender,
+        monthlySalary,
+        workDay,
+        ratePerDay,
+        ratePerHour,
+        dailyHours,
+        totalHours,
+        totalAmount: Math.round(totalAmount),
+        mobileNo: emp.phone,
+      };
+    });
+
+    const dailyTotals = new Array(31).fill(0);
+    let grandTotalHours = 0;
+    let grandTotalAmount = 0;
+
+    rows.forEach((row) => {
+      row.dailyHours.forEach((h, i) => {
+        dailyTotals[i] += h;
+      });
+      grandTotalHours += row.totalHours;
+      grandTotalAmount += row.totalAmount;
+    });
+
+    return {
+      rows,
+      dailyTotals,
+      grandTotalHours,
+      grandTotalAmount: Math.round(grandTotalAmount),
+      amountInWords: numberToWordsSimple(grandTotalAmount),
+    };
+  }, [
+    overtimeRequests,
+    overtimeAttendances,
+    overtimeRecords,
+    attendanceRecords,
+    fieldForceReps,
+    salaryStructures,
+    departmentFilter,
+    employeeFilter,
+    selectedEmployeeFilterObj,
+    monthFilter,
+    activeYearMonth,
+    getEmployeeEffectiveOvertimePolicy,
+  ]);
+
   // Helper to export any dataset to Excel
   const exportToExcel = (data: any[], fileName: string) => {
+    if (activeReport === 2) {
+      const sheetRows: any[][] = [];
+      sheetRows.push([companyDisplayName]);
+      sheetRows.push(['Daily Overtime Bill Factory']);
+      sheetRows.push([`For the month of ${monthHeadingLabel}`]);
+      sheetRows.push([
+        '', '', '', '', '', '', '', '', '',
+        ...dayHeaders.map((d) => d.weekday),
+        '', '', '', '',
+      ]);
+      sheetRows.push([
+        'S/N',
+        'EMP ID',
+        'Name Of Worker',
+        'Department',
+        'Gender',
+        'Monthly Salary',
+        'Work Day',
+        'Rate/ Day',
+        'Rate/ Hrs',
+        ...dayHeaders.map((d) => d.day),
+        'Total HR',
+        'Amount',
+        'Signature',
+        'Mobil NO',
+      ]);
+
+      deptOvertimeSheet.rows.forEach((row) => {
+        sheetRows.push([
+          row.sn,
+          row.empId,
+          row.name,
+          row.department,
+          row.gender,
+          row.monthlySalary,
+          row.workDay,
+          row.ratePerDay,
+          row.ratePerHour,
+          ...row.dailyHours.map((h) => (h > 0 ? Number(h.toFixed(2)) : '')),
+          Number(row.totalHours.toFixed(2)),
+          row.totalAmount,
+          '',
+          row.mobileNo,
+        ]);
+      });
+
+      sheetRows.push([
+        'Total',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ...deptOvertimeSheet.dailyTotals.map((t) => Number(t.toFixed(2))),
+        Number(deptOvertimeSheet.grandTotalHours.toFixed(2)),
+        deptOvertimeSheet.grandTotalAmount,
+        '',
+        '',
+      ]);
+      sheetRows.push([]);
+      sheetRows.push(['', `TK. ${deptOvertimeSheet.amountInWords} Only .`]);
+      sheetRows.push([]);
+      sheetRows.push([]);
+      sheetRows.push(['', 'Prepared By', '', '', 'Checked By', ...Array(36).fill(''), 'Approved BY']);
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 43 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 43 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 43 } },
+        { s: { r: 5 + deptOvertimeSheet.rows.length, c: 0 }, e: { r: 5 + deptOvertimeSheet.rows.length, c: 2 } },
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Daily Overtime Bill');
+      XLSX.writeFile(wb, `Daily_Overtime_Bill_Factory_${monthFilter || 'all'}.xlsx`);
+      return;
+    }
+
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
     XLSX.writeFile(wb, `${fileName}_${monthFilter || 'all'}.xlsx`);
+  };
+
+  const handlePrintDeptBill = () => {
+    document.body.classList.add('printing-ot-bill');
+    const cleanup = () => {
+      document.body.classList.remove('printing-ot-bill');
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+    setTimeout(cleanup, 1500);
   };
 
   // Generate Report 1: Employee-wise (Final Approved OT requests only)
@@ -90,27 +713,6 @@ export const OvertimeReportsTab: React.FC = () => {
       'Total OT Hours': Number(val.hours.toFixed(2)),
       'Average Rate (BDT)': Math.round(val.amount / (val.hours || 1)),
       'Total Overtime Amount (BDT)': Math.round(val.amount),
-    }));
-  };
-
-  // Generate Report 2: Department-wise
-  const generateDepartmentReport = () => {
-    const grouped: { [dept: string]: { hours: number; amount: number; employees: Set<string> } } = {};
-    filteredRequests.forEach(r => {
-      if (!grouped[r.department]) {
-        grouped[r.department] = { hours: 0, amount: 0, employees: new Set() };
-      }
-      grouped[r.department].hours += r.actualOvertimeHours || r.expectedHours || 0;
-      grouped[r.department].amount += r.calculatedOvertimeAmountBDT || 0;
-      grouped[r.department].employees.add(r.employeeId);
-    });
-
-    return Object.entries(grouped).map(([dept, val]) => ({
-      'Department': dept,
-      'Active OT Workers': val.employees.size,
-      'Total OT Hours': Number(val.hours.toFixed(2)),
-      'Total OT Cost (BDT)': Math.round(val.amount),
-      'Average Cost Per Hour (BDT)': Math.round(val.amount / (val.hours || 1)),
     }));
   };
 
@@ -223,20 +825,20 @@ export const OvertimeReportsTab: React.FC = () => {
     });
   };
 
-  // Current active report data
+  // Current active report data (for reports 1, 3-7)
   const currentData = 
     activeReport === 1 ? generateEmployeeReport() :
-    activeReport === 2 ? generateDepartmentReport() :
     activeReport === 3 ? generateBatchReport() :
     activeReport === 4 ? generateOrderReport() :
     activeReport === 5 ? generatePayrollReport() :
     activeReport === 6 ? generatePendingReport() :
-    generateEfficiencyReport();
+    activeReport === 7 ? generateEfficiencyReport() :
+    [];
 
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="p-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg">
@@ -247,17 +849,29 @@ export const OvertimeReportsTab: React.FC = () => {
           
         </div>
 
-        <button
-          onClick={() => exportToExcel(currentData, reportsList[activeReport - 1].name.replace(/\s+/g, '_'))}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-xs font-semibold shadow-sm transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          Export to Excel (.xlsx)
-        </button>
+        <div className="flex items-center gap-2">
+          {activeReport === 2 && (
+            <button
+              type="button"
+              onClick={handlePrintDeptBill}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-lg text-xs font-semibold shadow-sm transition-colors"
+            >
+              <Printer className="w-4 h-4" />
+              Print Report
+            </button>
+          )}
+          <button
+            onClick={() => exportToExcel(currentData, reportsList[activeReport - 1].name.replace(/\s+/g, '_'))}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-xs font-semibold shadow-sm transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export to Excel (.xlsx)
+          </button>
+        </div>
       </div>
 
       {/* Reports Grid Selector */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 print:hidden">
         {reportsList.map((rep) => {
           const Icon = rep.icon;
           const isActive = activeReport === rep.id;
@@ -288,7 +902,7 @@ export const OvertimeReportsTab: React.FC = () => {
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-slate-400" />
           <span className="font-semibold text-slate-700">Filters:</span>
@@ -322,13 +936,19 @@ export const OvertimeReportsTab: React.FC = () => {
           <input
             type="month"
             value={monthFilter}
-            onChange={(e) => setMonthFilter(e.target.value)}
+            onChange={(e) => {
+              hasUserChangedMonthRef.current = true;
+              setMonthFilter(e.target.value);
+            }}
             className="px-2 py-1 border border-slate-200 rounded text-slate-700 bg-white"
           />
           {monthFilter && (
             <button
               type="button"
-              onClick={() => setMonthFilter('')}
+              onClick={() => {
+                hasUserChangedMonthRef.current = true;
+                setMonthFilter('');
+              }}
               className="px-2 py-1 text-[11px] rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
             >
               All Months
@@ -337,55 +957,252 @@ export const OvertimeReportsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Report Data Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm text-slate-900">{reportsList[activeReport - 1].name}</span>
-            <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-mono">
-              {currentData.length} Records
-            </span>
+      {/* Report 2: Exact Screenshot-Style Daily Overtime Bill Factory Sheet */}
+      {activeReport === 2 ? (
+        <div
+          id="dept-ot-bill-sheet"
+          className="bg-white text-black rounded-xl border border-slate-300 shadow-sm p-4 font-serif print:border-none print:shadow-none print:p-0"
+        >
+          {/* Centered Company & Bill Titles */}
+          <div className="text-center leading-snug mb-1 text-black">
+            <div className="text-[14px] font-bold tracking-tight">
+              {companyDisplayName}
+            </div>
+            <div className="text-[12px] font-bold">
+              Daily Overtime Bill Factory
+            </div>
           </div>
-          <span className="text-xs text-slate-400">Bangladesh Labor Standards Audit Compliant</span>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                {currentData.length > 0 && Object.keys(currentData[0]).map((col) => (
-                  <th key={col} className="py-3 px-4 whitespace-nowrap">{col}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {currentData.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-[10px] text-black">
+              <thead>
+                {/* Month Banner Row spanning full table width */}
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-slate-400">
-                    No data found for the selected filter combination.
-                  </td>
+                  <th
+                    colSpan={44}
+                    className="border border-black py-0.5 px-2 text-center font-bold text-[11px] bg-white"
+                  >
+                    For the month of &nbsp;{monthHeadingLabel}
+                  </th>
                 </tr>
-              ) : (
-                currentData.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                    {Object.entries(row).map(([key, val], cellIdx) => (
-                      <td key={cellIdx} className="py-3 px-4 whitespace-nowrap font-medium text-slate-700">
-                        {typeof val === 'number' && key.includes('BDT') ? (
-                          <span className="font-mono font-bold text-slate-900">৳{val.toLocaleString()}</span>
-                        ) : typeof val === 'number' && key.includes('Hours') ? (
-                          <span className="font-mono text-blue-700 font-semibold">{val} hrs</span>
-                        ) : (
-                          String(val)
-                        )}
-                      </td>
-                    ))}
+
+                {/* Sub-header Row: blank cells on left/right, Weekday labels above 1..31 */}
+                <tr>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  {dayHeaders.map((d) => (
+                    <th
+                      key={`wk-${d.day}`}
+                      className="border border-black px-0.5 py-0.5 text-center font-normal text-[9px] bg-white min-w-[20px]"
+                    >
+                      {d.weekday}
+                    </th>
+                  ))}
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                  <th className="border border-black px-1 py-0.5 bg-white"></th>
+                </tr>
+
+                {/* Main Header Row */}
+                <tr className="font-bold text-center bg-white">
+                  <th className="border border-black px-1.5 py-1 whitespace-nowrap">S/N</th>
+                  <th className="border border-black px-1.5 py-1 whitespace-nowrap">EMP ID</th>
+                  <th className="border border-black px-2 py-1 whitespace-nowrap">Name Of Worker</th>
+                  <th className="border border-black px-2 py-1 whitespace-nowrap">Department</th>
+                  <th className="border border-black px-1.5 py-1 whitespace-nowrap">Gender</th>
+                  <th className="border border-black px-1.5 py-1 whitespace-nowrap">Monthly Salary</th>
+                  <th className="border border-black px-1.5 py-1 whitespace-nowrap">Work Day</th>
+                  <th className="border border-black px-1.5 py-1 whitespace-nowrap">Rate/ Day</th>
+                  <th className="border border-black px-1.5 py-1 whitespace-nowrap leading-tight">
+                    Rate/
+                    <br />
+                    Hrs
+                  </th>
+                  {dayHeaders.map((d) => (
+                    <th
+                      key={`day-${d.day}`}
+                      className="border border-black px-0.5 py-1 text-center font-bold min-w-[20px]"
+                    >
+                      {d.day}
+                    </th>
+                  ))}
+                  <th className="border border-black px-1.5 py-1 whitespace-nowrap leading-tight">
+                    Total
+                    <br />
+                    HR
+                  </th>
+                  <th className="border border-black px-2 py-1 whitespace-nowrap">Amount</th>
+                  <th className="border border-black px-3 py-1 whitespace-nowrap min-w-[68px]">Signature</th>
+                  <th className="border border-black px-2 py-1 whitespace-nowrap min-w-[82px]">Mobil NO</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {deptOvertimeSheet.rows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={44}
+                      className="border border-black py-6 text-center text-[11px] font-sans text-slate-500"
+                    >
+                      No employees or overtime records found for the selected filters.
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  deptOvertimeSheet.rows.map((row) => (
+                    <tr key={`${row.empId}-${row.sn}`}>
+                      <td className="border border-black px-1 py-0.5 text-center">{row.sn}</td>
+                      <td className="border border-black px-1.5 py-0.5 text-center font-bold whitespace-nowrap">
+                        {row.empId}
+                      </td>
+                      <td className="border border-black px-1.5 py-0.5 text-left font-bold whitespace-nowrap">
+                        {row.name}
+                      </td>
+                      <td className="border border-black px-1.5 py-0.5 text-center whitespace-nowrap font-sans">
+                        {row.department}
+                      </td>
+                      <td className="border border-black px-1.5 py-0.5 text-center whitespace-nowrap font-sans">
+                        {row.gender}
+                      </td>
+                      <td className="border border-black px-1.5 py-0.5 text-center font-sans">
+                        {row.monthlySalary}
+                      </td>
+                      <td className="border border-black px-1 py-0.5 text-center font-sans">
+                        {row.workDay}
+                      </td>
+                      <td className="border border-black px-1.5 py-0.5 text-center font-sans">
+                        {row.ratePerDay}
+                      </td>
+                      <td className="border border-black px-1.5 py-0.5 text-center font-sans">
+                        {row.ratePerHour}
+                      </td>
+                      {row.dailyHours.map((hrs, idx) => (
+                        <td
+                          key={`cell-${row.sn}-${idx}`}
+                          className="border border-black px-0.5 py-0.5 text-center font-sans"
+                        >
+                          {hrs > 0 ? formatHoursValue(hrs) : ''}
+                        </td>
+                      ))}
+                      <td className="border border-black px-1.5 py-0.5 text-center font-bold font-sans">
+                        {formatHoursValue(row.totalHours)}
+                      </td>
+                      <td className="border border-black px-1.5 py-0.5 text-center font-bold font-sans">
+                        {row.totalAmount}
+                      </td>
+                      <td className="border border-black px-2 py-0.5"></td>
+                      <td className="border border-black px-1.5 py-0.5 text-center whitespace-nowrap font-sans">
+                        {row.mobileNo}
+                      </td>
+                    </tr>
+                  ))
+                )}
+
+                {/* Total Row */}
+                <tr className="font-bold bg-white">
+                  <td colSpan={3} className="border border-black px-2 py-1 text-center text-[11px]">
+                    Total
+                  </td>
+                  <td className="border border-black px-1 py-1"></td>
+                  <td className="border border-black px-1 py-1"></td>
+                  <td className="border border-black px-1 py-1"></td>
+                  <td className="border border-black px-1 py-1"></td>
+                  <td className="border border-black px-1 py-1"></td>
+                  <td className="border border-black px-1 py-1"></td>
+                  {deptOvertimeSheet.dailyTotals.map((daySum, idx) => (
+                    <td
+                      key={`tot-day-${idx}`}
+                      className="border border-black px-0.5 py-1 text-center font-sans"
+                    >
+                      {formatHoursValue(daySum)}
+                    </td>
+                  ))}
+                  <td className="border border-black px-1.5 py-1 text-center font-sans">
+                    {formatHoursValue(deptOvertimeSheet.grandTotalHours)}
+                  </td>
+                  <td className="border border-black px-1.5 py-1 text-center font-sans">
+                    {deptOvertimeSheet.grandTotalAmount}
+                  </td>
+                  <td className="border border-black px-2 py-1"></td>
+                  <td className="border border-black px-1.5 py-1"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Amount in Words */}
+          <div className="mt-1.5 pl-16 text-[11px] font-bold text-black">
+            TK. &nbsp;{deptOvertimeSheet.amountInWords} &nbsp;Only .
+          </div>
+
+          {/* Signatory Footer */}
+          <div className="mt-10 mb-2 px-16 flex items-center justify-between text-[11px] font-bold text-black">
+            <div className="flex items-center gap-36">
+              <span>Prepared By</span>
+              <span>Checked By</span>
+            </div>
+            <span>Approved BY</span>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Report Data Table for Reports 1, 3-7 */
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-slate-900">{reportsList[activeReport - 1].name}</span>
+              <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-mono">
+                {currentData.length} Records
+              </span>
+            </div>
+            <span className="text-xs text-slate-400">Bangladesh Labor Standards Audit Compliant</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  {currentData.length > 0 && Object.keys(currentData[0]).map((col) => (
+                    <th key={col} className="py-3 px-4 whitespace-nowrap">{col}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {currentData.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="py-10 text-center text-slate-400">
+                      No data found for the selected filter combination.
+                    </td>
+                  </tr>
+                ) : (
+                  currentData.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      {Object.entries(row).map(([key, val], cellIdx) => (
+                        <td key={cellIdx} className="py-3 px-4 whitespace-nowrap font-medium text-slate-700">
+                          {typeof val === 'number' && key.includes('BDT') ? (
+                            <span className="font-mono font-bold text-slate-900">৳{val.toLocaleString()}</span>
+                          ) : typeof val === 'number' && key.includes('Hours') ? (
+                            <span className="font-mono text-blue-700 font-semibold">{val} hrs</span>
+                          ) : (
+                            String(val)
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
