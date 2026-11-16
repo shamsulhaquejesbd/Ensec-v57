@@ -157,6 +157,7 @@ export const OvertimeReportsTab: React.FC = () => {
     overtimeRecords,
     attendanceRecords,
     fieldForceReps,
+    departments,
     salaryStructures,
     productionOrders,
     getEmployeeEffectiveOvertimePolicy,
@@ -213,10 +214,7 @@ export const OvertimeReportsTab: React.FC = () => {
 
   const availableDepartments = Array.from(
     new Set([
-      'Production Assembly',
-      'Cell Formation & Testing',
-      'Quality Control',
-      'Plant Maintenance',
+      ...(departments || []).map((d) => d.name).filter(Boolean),
       ...fieldForceReps.map((r) => r.department).filter(Boolean) as string[],
       ...fieldForceReps.flatMap((r) => r.departments || []).filter(Boolean),
       ...overtimeRequests.map((r) => r.department).filter(Boolean),
@@ -272,7 +270,10 @@ export const OvertimeReportsTab: React.FC = () => {
     });
   }, [activeYearNum, activeMonthNum]);
 
-  const companyDisplayName = orgHierarchy?.name?.trim() || 'Stern Industrise LTD';
+  const companyDisplayName =
+    departmentFilter !== 'all'
+      ? departmentFilter
+      : orgHierarchy?.name?.trim() || 'Stern Industrise LTD';
 
   // Generate Report 2: Daily Overtime Bill Factory sheet (Department-wise Overtime Report)
   const deptOvertimeSheet = useMemo(() => {
