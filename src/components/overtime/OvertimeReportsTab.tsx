@@ -160,6 +160,8 @@ export const OvertimeReportsTab: React.FC = () => {
     departments,
     salaryStructures,
     productionOrders,
+    overtimePolicies,
+    payrollSettings,
     getEmployeeEffectiveOvertimePolicy,
     orgHierarchy,
   } = useERP();
@@ -430,6 +432,7 @@ export const OvertimeReportsTab: React.FC = () => {
       id: string;
       code: string;
       name: string;
+      department?: string;
       employmentType: string;
       gender: string;
       basicSalaryBDT: number;
@@ -455,6 +458,7 @@ export const OvertimeReportsTab: React.FC = () => {
         id: rep.id,
         code: rep.code || rep.id,
         name: rep.name || 'Worker',
+        department: rep.department || rep.departments?.[0],
         employmentType: repEmpType,
         gender: repGender,
         basicSalaryBDT: Number(str?.basicSalaryBDT ?? rep.basicSalaryBDT ?? 0),
@@ -507,6 +511,7 @@ export const OvertimeReportsTab: React.FC = () => {
         id: key,
         code: matchedRep?.code || rec.employeeCode || key,
         name: matchedRep?.name || rec.employeeName || 'Worker',
+        department: repDept !== '-' ? repDept : undefined,
         employmentType: repEmpType,
         gender: repGender,
         basicSalaryBDT: Number(str?.basicSalaryBDT ?? rec.basicSalaryBDT ?? matchedRep?.basicSalaryBDT ?? 0),
@@ -523,19 +528,50 @@ export const OvertimeReportsTab: React.FC = () => {
       String(a.code).localeCompare(String(b.code), undefined, { numeric: true })
     );
 
+    const getMonthlyWorkingDays = (year: number, month1Based: number): number => {
+      const daysInMonth = new Date(year, month1Based, 0).getDate();
+      let workingDays = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const weekday = new Date(year, month1Based - 1, d).getDay();
+        if (weekday !== 5) { // Exclude Fridays (weekly off)
+          workingDays++;
+        }
+      }
+      return Math.max(1, workingDays);
+    };
+
+    const monthWorkDays = getMonthlyWorkingDays(activeYearNum, activeMonthNum);
+    const defaultOtPolicy =
+      (overtimePolicies || []).find((p) => p.isDefault) || (overtimePolicies || [])[0];
+
     const rows: DeptBillRow[] = sortedEmployees.map((emp, index) => {
       const policy = getEmployeeEffectiveOvertimePolicy(emp.id, `${activeYearMonth}-01`);
-      const standardHours = Number(policy?.standardMonthlyWorkingHours) || 208;
-      const workDay = Math.max(1, Math.round(standardHours / 8));
+      const matchedDeptPolicy =
+        (overtimePolicies || []).find(
+          (p) =>
+            p.department &&
+            emp.department &&
+            normStr(p.department) === normStr(emp.department)
+        ) || defaultOtPolicy;
+      const dailyWorkingHours =
+        Number(
+          matchedDeptPolicy?.standardDailyWorkingHours ||
+            payrollSettings?.standardDailyHours ||
+            payrollSettings?.standardWorkHoursPerDay
+        ) || 8;
+      const workDay = monthWorkDays;
       const monthlySalary = Math.round(emp.basicSalaryBDT || 0);
       const ratePerDay = workDay > 0 ? Math.round(monthlySalary / workDay) : 0;
-      const baseHourlyRate =
+      const ratePerHour =
         policy?.calculationBasis === 'Fixed Hourly Rate'
-          ? Number(policy?.fixedHourlyRateBDT) || 0
-          : standardHours > 0
-            ? monthlySalary / standardHours
+          ? Math.round(Number(policy?.fixedHourlyRateBDT) || 0)
+          : dailyWorkingHours > 0
+            ? Math.round(ratePerDay / dailyWorkingHours)
             : 0;
-      const ratePerHour = Math.round(baseHourlyRate);
+      const monthEffectivePolicy = {
+        ...policy,
+        standardMonthlyWorkingHours: workDay * dailyWorkingHours,
+      };
 
       const dailyHours = new Array(31).fill(0);
       let totalHours = 0;
@@ -571,7 +607,7 @@ export const OvertimeReportsTab: React.FC = () => {
         ) {
           totalAmount += Number(req.calculatedOvertimeAmountBDT) || 0;
         } else {
-          const calc = calculateEmployeeIndividualOvertime(monthlySalary, policy, hrs);
+          const calc = calculateEmployeeIndividualOvertime(monthlySalary, monthEffectivePolicy, hrs);
           totalAmount += calc.totalAmountBDT;
         }
       });
@@ -590,7 +626,7 @@ export const OvertimeReportsTab: React.FC = () => {
           }
         }
         totalHours += hrs;
-        const calc = calculateEmployeeIndividualOvertime(monthlySalary, policy, hrs);
+        const calc = calculateEmployeeIndividualOvertime(monthlySalary, monthEffectivePolicy, hrs);
         totalAmount += calc.totalAmountBDT;
       });
 
@@ -609,7 +645,7 @@ export const OvertimeReportsTab: React.FC = () => {
         if (ot.totalAmountBDT !== undefined && ot.totalAmountBDT !== null) {
           totalAmount += Number(ot.totalAmountBDT) || 0;
         } else {
-          const calc = calculateEmployeeIndividualOvertime(monthlySalary, policy, hrs);
+          const calc = calculateEmployeeIndividualOvertime(monthlySalary, monthEffectivePolicy, hrs);
           totalAmount += calc.totalAmountBDT;
         }
       });
@@ -626,7 +662,7 @@ export const OvertimeReportsTab: React.FC = () => {
           }
         }
         totalHours += hrs;
-        const calc = calculateEmployeeIndividualOvertime(monthlySalary, policy, hrs);
+        const calc = calculateEmployeeIndividualOvertime(monthlySalary, monthEffectivePolicy, hrs);
         totalAmount += calc.totalAmountBDT;
       });
 
@@ -680,6 +716,10 @@ export const OvertimeReportsTab: React.FC = () => {
     selectedEmployeeFilterObj,
     monthFilter,
     activeYearMonth,
+    activeYearNum,
+    activeMonthNum,
+    overtimePolicies,
+    payrollSettings,
     getEmployeeEffectiveOvertimePolicy,
   ]);
 
