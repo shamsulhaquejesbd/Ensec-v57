@@ -4014,8 +4014,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               pin: row.pin || undefined,
               phone: row.phone || '',
               email: row.email || undefined,
-              designation: row.designation || 'Territory Sales Officer',
-              fieldForceType: row.field_force_type || 'Capture',
+              designation: row.designation || '',
+              fieldForceType: row.field_force_type || undefined,
               department: row.department || undefined,
               departments: Array.isArray(row.departments)
                 ? row.departments
@@ -4044,7 +4044,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               mobileAllowanceBDT: Number(row.mobile_allowance_bdt) || 0,
               photoUrl: row.photo_url || undefined,
               gender: row.gender || undefined,
-              employeeCategory: row.employee_category || 'Field Employee',
+              employeeCategory: row.employee_category || undefined,
               employmentType: row.employment_type || undefined,
               employmentStatus: row.employment_status || (row.is_active === false ? 'Inactive' : 'Active'),
               presentAddress: row.present_address || undefined,
@@ -15356,8 +15356,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         native_name: newRep.nativeName,
         pin: newRep.pin,
         phone: newRep.phone ?? '',
-        designation: newRep.designation,
-        field_force_type: newRep.fieldForceType,
+        designation: newRep.designation ?? '',
+        field_force_type: newRep.fieldForceType || null,
         department: newRep.department || null,
         departments: Array.isArray(newRep.departments) ? newRep.departments : [],
         region: newRep.region,
@@ -15377,7 +15377,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         joining_date: newRep.joiningDate || null,
         discontinue_date: newRep.discontinueDate || null,
         invoice_within_days: newRep.invoiceWithinDays ?? null,
-        employee_category: newRep.employeeCategory,
+        employee_category: newRep.employeeCategory || null,
         gender: newRep.gender || null,
         employment_type: newRep.employmentType || null,
         employment_status: newRep.employmentStatus,
@@ -15493,8 +15493,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (updates.pin !== undefined) payload.pin = updates.pin;
       if (updates.phone !== undefined) payload.phone = updates.phone ?? '';
       if (updates.email !== undefined) payload.email = updates.email;
-      if (updates.designation !== undefined) payload.designation = updates.designation;
-      if (updates.fieldForceType !== undefined) payload.field_force_type = updates.fieldForceType;
+      if (updates.designation !== undefined) payload.designation = updates.designation ?? '';
+      if (updates.fieldForceType !== undefined) payload.field_force_type = updates.fieldForceType || null;
       if (updates.department !== undefined) payload.department = updates.department || null;
       if (updates.departments !== undefined) payload.departments = Array.isArray(updates.departments) ? updates.departments : [];
       if (updates.region !== undefined) payload.region = updates.region;
@@ -15515,7 +15515,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (updates.mobileAllowanceBDT !== undefined) payload.mobile_allowance_bdt = updates.mobileAllowanceBDT;
       if (updates.photoUrl !== undefined) payload.photo_url = updates.photoUrl;
       if (updates.gender !== undefined) payload.gender = updates.gender || null;
-      if (updates.employeeCategory !== undefined) payload.employee_category = updates.employeeCategory;
+      if (updates.employeeCategory !== undefined) payload.employee_category = updates.employeeCategory || null;
       if (updates.employmentType !== undefined) payload.employment_type = updates.employmentType || null;
       if (updates.employmentStatus !== undefined) payload.employment_status = updates.employmentStatus;
       if (updates.presentAddress !== undefined) payload.present_address = updates.presentAddress;

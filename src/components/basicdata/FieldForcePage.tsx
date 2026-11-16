@@ -238,8 +238,8 @@ export const FieldForcePage: React.FC = () => {
   const [formDesignation, setFormDesignation] = useState('');
   const [formJoiningDate, setFormJoiningDate] = useState(new Date().toISOString().substring(0, 10));
   const [formDiscontinueDate, setFormDiscontinueDate] = useState('');
-  const [formFieldType, setFormFieldType] = useState('Order Booker');
-  const [formActionType, setFormActionType] = useState('Primary Order Booking');
+  const [formFieldType, setFormFieldType] = useState('');
+  const [formActionType, setFormActionType] = useState('');
   const [formGender, setFormGender] = useState('');
   const [formTadaApproverId, setFormTadaApproverId] = useState<string>('');
   const [formLinkedUserId, setFormLinkedUserId] = useState<string>('');
@@ -288,7 +288,7 @@ export const FieldForcePage: React.FC = () => {
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
 
   // Comprehensive HR & Banking Details
-  const [formEmployeeCategory, setFormEmployeeCategory] = useState('Field Employee');
+  const [formEmployeeCategory, setFormEmployeeCategory] = useState('');
   const [formEmploymentType, setFormEmploymentType] = useState('');
   const [formNationalId, setFormNationalId] = useState('');
   const [formPresentAddress, setFormPresentAddress] = useState('');
@@ -427,11 +427,11 @@ export const FieldForcePage: React.FC = () => {
     setFormNativeName('');
     setFormMobile('');
     setFormEmail('');
-    setFormDesignation('Order Booker');
+    setFormDesignation('');
     setFormJoiningDate(new Date().toISOString().substring(0, 10));
     setFormDiscontinueDate('');
-    setFormFieldType('Order Booker');
-    setFormActionType('Primary Order Booking');
+    setFormFieldType('');
+    setFormActionType('');
     setFormGender('');
     setFormMarketHierarchy('');
     setMarketHierarchySearch('');
@@ -455,7 +455,7 @@ export const FieldForcePage: React.FC = () => {
     setFormTaDaBDT('');
     setFormMobileAllowanceBDT('');
     setFormStatus('Active');
-    setFormEmployeeCategory('Field Employee');
+    setFormEmployeeCategory('');
     setFormEmploymentType('');
     setFormNationalId('');
     setFormPresentAddress('');
@@ -510,11 +510,11 @@ export const FieldForcePage: React.FC = () => {
     setFormNativeName(rep.nativeName || '');
     setFormMobile(rep.phone || '');
     setFormEmail(rep.email || '');
-    setFormDesignation(rep.designation || rep.fieldForceType || 'Order Booker');
+    setFormDesignation(rep.designation || '');
     setFormJoiningDate(rep.joiningDate || new Date().toISOString().substring(0, 10));
     setFormDiscontinueDate(rep.discontinueDate || '');
-    setFormFieldType(rep.fieldForceType || 'Order Booker');
-    setFormActionType(rep.actionType || 'Primary Order Booking');
+    setFormFieldType(rep.fieldForceType || '');
+    setFormActionType(rep.actionType || '');
     setFormGender(rep.gender || '');
     setFormTadaApproverId(rep.tadaApproverId || '');
     
@@ -572,7 +572,7 @@ export const FieldForcePage: React.FC = () => {
     setFormStatus((rep.status as any) || (rep.isActive === false ? 'Inactive' : 'Active'));
 
     // Extended HR & Banking details
-    setFormEmployeeCategory(rep.employeeCategory || 'Field Employee');
+    setFormEmployeeCategory(rep.employeeCategory || '');
     setFormEmploymentType(rep.employmentType || '');
     setFormNationalId(rep.nationalId || '');
     setFormPresentAddress(rep.presentAddress || '');
@@ -696,11 +696,11 @@ export const FieldForcePage: React.FC = () => {
       pin: formPin.trim(),
       phone: formMobile.trim(),
       email: formEmail.trim() || undefined,
-      designation: formDesignation.trim() || formFieldType,
+      designation: formDesignation.trim(),
       department: selectedDepartments[0] || '',
       departments: [...selectedDepartments],
       fieldForceType: formFieldType,
-      actionType: formActionType,
+      actionType: formActionType || undefined,
       gender: formGender || undefined,
       marketHierarchy: formMarketHierarchy,
       region: resolvedRegion,
@@ -727,7 +727,7 @@ export const FieldForcePage: React.FC = () => {
       tadaApproverId: selectedTadaApprover?.id || undefined,
       tadaApproverName: selectedTadaApprover ? `${selectedTadaApprover.name} (${selectedTadaApprover.role})` : undefined,
       nationalId: formNationalId.trim() || undefined,
-      employeeCategory: formEmployeeCategory,
+      employeeCategory: formEmployeeCategory || undefined,
       employmentType: formEmploymentType,
       employmentStatus: formStatus,
       presentAddress: formPresentAddress.trim() || undefined,
@@ -846,11 +846,11 @@ export const FieldForcePage: React.FC = () => {
       pin: formPin.trim(),
       phone: formMobile.trim(),
       email: formEmail.trim() || undefined,
-      designation: formDesignation.trim() || formFieldType,
+      designation: formDesignation.trim(),
       department: selectedDepartments[0] || '',
       departments: [...selectedDepartments],
       fieldForceType: formFieldType,
-      actionType: formActionType,
+      actionType: formActionType || '',
       gender: formGender || undefined,
       marketHierarchy: formMarketHierarchy,
       region: resolvedRegion,
@@ -887,7 +887,7 @@ export const FieldForcePage: React.FC = () => {
       overtimePolicyNotes: formOvertimePolicyNotes.trim() || undefined,
       overtimePolicyHistory: updatedHistory,
 
-      employeeCategory: formEmployeeCategory,
+      employeeCategory: formEmployeeCategory || '',
       employmentType: formEmploymentType,
       employmentStatus: formStatus === 'Active' ? 'Active' : 'Inactive',
       nationalId: formNationalId.trim() || undefined,
@@ -1889,10 +1889,12 @@ export const FieldForcePage: React.FC = () => {
                         FieldForce Type<span className="text-red-500">*</span>
                       </label>
                       <select
+                        required
                         value={formFieldType}
                         onChange={(e) => setFormFieldType(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                       >
+                        <option value="">-- Select FieldForce Type --</option>
                         {FIELD_FORCE_TYPES.map((t) => (
                           <option key={t.value} value={t.value}>
                             {t.label}
@@ -1944,6 +1946,7 @@ export const FieldForcePage: React.FC = () => {
                         onChange={(e) => setFormActionType(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       >
+                        <option value="">-- Select Action Type --</option>
                         {ACTION_TYPES.map((act) => (
                           <option key={act} value={act}>
                             {act}
@@ -2028,6 +2031,7 @@ export const FieldForcePage: React.FC = () => {
                           onChange={(e) => setFormEmployeeCategory(e.target.value)}
                           className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                         >
+                          <option value="">-- Select Employee Category --</option>
                           <option value="Field Employee">Field Employee</option>
                           <option value="Office Employee">Office Employee</option>
                           <option value="Factory Employee">Factory Employee</option>
@@ -3291,10 +3295,12 @@ export const FieldForcePage: React.FC = () => {
                         FieldForce Type<span className="text-red-500">*</span>
                       </label>
                       <select
+                        required
                         value={formFieldType}
                         onChange={(e) => setFormFieldType(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                       >
+                        <option value="">-- Select FieldForce Type --</option>
                         {FIELD_FORCE_TYPES.map((t) => (
                           <option key={t.value} value={t.value}>
                             {t.label}
@@ -3346,6 +3352,7 @@ export const FieldForcePage: React.FC = () => {
                         onChange={(e) => setFormActionType(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       >
+                        <option value="">-- Select Action Type --</option>
                         {ACTION_TYPES.map((act) => (
                           <option key={act} value={act}>
                             {act}
@@ -3430,6 +3437,7 @@ export const FieldForcePage: React.FC = () => {
                           onChange={(e) => setFormEmployeeCategory(e.target.value)}
                           className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                         >
+                          <option value="">-- Select Employee Category --</option>
                           <option value="Field Employee">Field Employee</option>
                           <option value="Office Employee">Office Employee</option>
                           <option value="Factory Employee">Factory Employee</option>
