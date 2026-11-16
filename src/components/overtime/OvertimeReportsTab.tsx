@@ -14,7 +14,8 @@ import {
   Layers, 
   Coins, 
   Clock,
-  Printer
+  Printer,
+  ChevronDown
 } from 'lucide-react';
 
 interface DeptBillRow {
@@ -168,11 +169,27 @@ export const OvertimeReportsTab: React.FC = () => {
 
   const [activeReport, setActiveReport] = useState<number>(1);
   const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [employmentTypeFilter, setEmploymentTypeFilter] = useState('all');
+  const [employmentTypeFilters, setEmploymentTypeFilters] = useState<string[]>([]);
+  const [isEmpTypeDropdownOpen, setIsEmpTypeDropdownOpen] = useState(false);
+  const empTypeDropdownRef = useRef<HTMLDivElement>(null);
   const [genderFilter, setGenderFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState(() => new Date().toISOString().slice(0, 7));
   const [employeeFilter, setEmployeeFilter] = useState('all');
   const hasUserChangedMonthRef = useRef(false);
+
+  useEffect(() => {
+    if (!isEmpTypeDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        empTypeDropdownRef.current &&
+        !empTypeDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsEmpTypeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isEmpTypeDropdownOpen]);
 
   // If the default current month has no overtime data yet while another month does, auto-select the latest month with OT data
   useEffect(() => {
@@ -272,10 +289,26 @@ export const OvertimeReportsTab: React.FC = () => {
     [employeeFilter, fieldForceReps]
   );
 
+  const normalizedSelectedEmpTypes = useMemo(
+    () => employmentTypeFilters.map((t) => normStr(t)),
+    [employmentTypeFilters]
+  );
+
+  const toggleEmploymentTypeFilter = (empType: string) => {
+    setEmploymentTypeFilters((prev) => {
+      const target = normStr(empType);
+      const exists = prev.some((item) => normStr(item) === target);
+      if (exists) {
+        return prev.filter((item) => normStr(item) !== target);
+      }
+      return [...prev, empType];
+    });
+  };
+
   const matchesEmpTypeAndGender = (empType?: string, empGender?: string) => {
     if (
-      employmentTypeFilter !== 'all' &&
-      normStr(empType) !== normStr(employmentTypeFilter)
+      normalizedSelectedEmpTypes.length > 0 &&
+      !normalizedSelectedEmpTypes.includes(normStr(empType))
     ) {
       return false;
     }
@@ -301,7 +334,7 @@ export const OvertimeReportsTab: React.FC = () => {
         return false;
       }
     }
-    if (employmentTypeFilter !== 'all' || genderFilter !== 'all') {
+    if (employmentTypeFilters.length > 0 || genderFilter !== 'all') {
       const matchedRep = fieldForceReps.find((e) => matchesEmpIdentity(e, r));
       if (
         !matchesEmpTypeAndGender(
@@ -710,7 +743,7 @@ export const OvertimeReportsTab: React.FC = () => {
     fieldForceReps,
     salaryStructures,
     departmentFilter,
-    employmentTypeFilter,
+    employmentTypeFilters,
     genderFilter,
     employeeFilter,
     selectedEmployeeFilterObj,
@@ -1058,17 +1091,69 @@ export const OvertimeReportsTab: React.FC = () => {
             ))}
           </select>
 
-          <select
-            aria-label="Employment Type"
-            value={employmentTypeFilter}
-            onChange={(e) => setEmploymentTypeFilter(e.target.value)}
-            className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-700 bg-white"
-          >
-            <option value="all">All Employment Types</option>
-            {availableEmploymentTypes.map((empType) => (
-              <option key={empType} value={empType}>{empType}</option>
-            ))}
-          </select>
+          <div className="relative" ref={empTypeDropdownRef}>
+            <button
+              type="button"
+              aria-label="Employment Type"
+              aria-expanded={isEmpTypeDropdownOpen}
+              onClick={() => setIsEmpTypeDropdownOpen((prev) => !prev)}
+              title={
+                employmentTypeFilters.length > 0
+                  ? employmentTypeFilters.join(', ')
+                  : 'All Employment Types'
+              }
+              className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-700 bg-white flex items-center justify-between gap-2 min-w-[175px] hover:border-slate-300"
+            >
+              <span className="truncate max-w-[160px]">
+                {employmentTypeFilters.length === 0
+                  ? 'All Employment Types'
+                  : employmentTypeFilters.length === 1
+                    ? employmentTypeFilters[0]
+                    : `${employmentTypeFilters.length} Employment Types`}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            </button>
+
+            {isEmpTypeDropdownOpen && (
+              <div className="absolute left-0 top-full mt-1 z-30 w-56 bg-white border border-slate-200 rounded-lg shadow-lg p-1.5">
+                <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-slate-100 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setEmploymentTypeFilters([])}
+                    className="text-blue-600 hover:underline font-medium"
+                  >
+                    All (Clear)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmploymentTypeFilters([...availableEmploymentTypes])}
+                    className="text-slate-600 hover:underline font-medium"
+                  >
+                    Select All
+                  </button>
+                </div>
+                <div className="max-h-56 overflow-y-auto space-y-0.5">
+                  {availableEmploymentTypes.map((empType) => {
+                    const checked = normalizedSelectedEmpTypes.includes(normStr(empType));
+                    return (
+                      <label
+                        key={empType}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer text-slate-700 select-none"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleEmploymentTypeFilter(empType)}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="truncate">{empType}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           <select
             aria-label="Gender"
