@@ -250,6 +250,7 @@ export const FieldForcePage: React.FC = () => {
   // Departments (Checklist with "All")
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [allDepartmentsChecked, setAllDepartmentsChecked] = useState(false);
+  const [departmentError, setDepartmentError] = useState<string>('');
 
   // Markets & Distributors
   const [allMarketsChecked, setAllMarketsChecked] = useState(false);
@@ -354,19 +355,21 @@ export const FieldForcePage: React.FC = () => {
 
   // Handle department checkbox toggle
   const toggleDepartment = (dept: string) => {
+    setDepartmentError('');
     if (selectedDepartments.includes(dept)) {
       setSelectedDepartments(selectedDepartments.filter((d) => d !== dept));
       setAllDepartmentsChecked(false);
     } else {
       const next = [...selectedDepartments, dept];
       setSelectedDepartments(next);
-      if (next.length === availableDepartmentOptions.length) {
+      if (availableDepartmentOptions.length > 0 && availableDepartmentOptions.every((opt) => next.includes(opt))) {
         setAllDepartmentsChecked(true);
       }
     }
   };
 
   const toggleAllDepartments = () => {
+    setDepartmentError('');
     if (allDepartmentsChecked) {
       setSelectedDepartments([]);
       setAllDepartmentsChecked(false);
@@ -475,6 +478,7 @@ export const FieldForcePage: React.FC = () => {
     setFormGracePeriodMinutes(DEFAULT_GRACE_PERIOD_MINUTES);
     setFormLinkedUserId('');
     setGpsCaptureStatus('');
+    setDepartmentError('');
   };
 
   const handleOpenAdd = () => {
@@ -486,6 +490,7 @@ export const FieldForcePage: React.FC = () => {
   const handleOpenEdit = (rep: FieldForceRep) => {
     setEditingRep(rep);
     setEditModalTab('all');
+    setDepartmentError('');
     setFormCode(rep.code || '');
     setFormPin(rep.pin || '1234');
     setFormName(rep.name || '');
@@ -631,6 +636,14 @@ export const FieldForcePage: React.FC = () => {
   const handleSaveAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim() || !formCode.trim()) return;
+    if (selectedDepartments.length === 0) {
+      setDepartmentError('Please select at least one Assigned Business Department.');
+      if (addModalTab !== 'all' && addModalTab !== 'basic') {
+        setAddModalTab('basic');
+      }
+      return;
+    }
+    setDepartmentError('');
 
     const assignedDist = distributors.find((d) => d.id === selectedDistributorId);
     const matchedHierarchy = allMarketHierarchyOptions.find(
@@ -746,6 +759,14 @@ export const FieldForcePage: React.FC = () => {
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRep) return;
+    if (selectedDepartments.length === 0) {
+      setDepartmentError('Please select at least one Assigned Business Department.');
+      if (editModalTab !== 'all' && editModalTab !== 'basic') {
+        setEditModalTab('basic');
+      }
+      return;
+    }
+    setDepartmentError('');
 
     const assignedDist = distributors.find((d) => d.id === selectedDistributorId);
     const matchedHierarchy = allMarketHierarchyOptions.find(
@@ -1806,11 +1827,10 @@ export const FieldForcePage: React.FC = () => {
                     {/* Mobile */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Mobile Phone Number<span className="text-red-500">*</span>
+                        Mobile Phone Number
                       </label>
                       <input
                         type="text"
-                        required
                         value={formMobile}
                         onChange={(e) => setFormMobile(e.target.value)}
                         placeholder="017XXXXXXXX"
@@ -1930,15 +1950,14 @@ export const FieldForcePage: React.FC = () => {
                     {/* Invoice Within Days */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Invoice Within (Days)<span className="text-red-500">*</span>
+                        Invoice Within (Days)
                       </label>
                       <input
                         type="number"
-                        min={1}
+                        min={0}
                         max={30}
-                        required
                         value={invoiceWithinDays}
-                        onChange={(e) => setInvoiceWithinDays(Number(e.target.value))}
+                        onChange={(e) => setInvoiceWithinDays(e.target.value === '' ? 0 : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
@@ -2353,9 +2372,15 @@ export const FieldForcePage: React.FC = () => {
                   {/* Departments checklist */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Assigned Business Departments
+                      Assigned Business Departments<span className="text-red-500">*</span>
                     </label>
-                    <div className="border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-slate-50/60 dark:bg-slate-800/40 max-h-36 overflow-y-auto space-y-2">
+                    <div
+                      className={`border rounded-lg p-2.5 bg-slate-50/60 dark:bg-slate-800/40 max-h-36 overflow-y-auto space-y-2 ${
+                        departmentError
+                          ? 'border-red-500 ring-1 ring-red-500'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
                       <label className="flex items-center gap-2 text-xs cursor-pointer font-semibold border-b pb-1 text-slate-800 dark:text-slate-200">
                         <input
                           type="checkbox"
@@ -2377,6 +2402,12 @@ export const FieldForcePage: React.FC = () => {
                         </label>
                       ))}
                     </div>
+                    {departmentError && (
+                      <p className="mt-1 text-[11px] font-semibold text-red-600 dark:text-red-400 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{departmentError}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -3186,11 +3217,10 @@ export const FieldForcePage: React.FC = () => {
                     {/* Mobile */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Mobile Phone Number<span className="text-red-500">*</span>
+                        Mobile Phone Number
                       </label>
                       <input
                         type="text"
-                        required
                         value={formMobile}
                         onChange={(e) => setFormMobile(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
@@ -3309,15 +3339,14 @@ export const FieldForcePage: React.FC = () => {
                     {/* Invoice Within Days */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Invoice Within (Days)<span className="text-red-500">*</span>
+                        Invoice Within (Days)
                       </label>
                       <input
                         type="number"
-                        min={1}
+                        min={0}
                         max={30}
-                        required
                         value={invoiceWithinDays}
-                        onChange={(e) => setInvoiceWithinDays(Number(e.target.value))}
+                        onChange={(e) => setInvoiceWithinDays(e.target.value === '' ? 0 : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
@@ -3734,9 +3763,15 @@ export const FieldForcePage: React.FC = () => {
                   {/* Departments checklist */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Assigned Business Departments
+                      Assigned Business Departments<span className="text-red-500">*</span>
                     </label>
-                    <div className="border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-slate-50/60 dark:bg-slate-800/40 max-h-36 overflow-y-auto space-y-2">
+                    <div
+                      className={`border rounded-lg p-2.5 bg-slate-50/60 dark:bg-slate-800/40 max-h-36 overflow-y-auto space-y-2 ${
+                        departmentError
+                          ? 'border-red-500 ring-1 ring-red-500'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
                       <label className="flex items-center gap-2 text-xs cursor-pointer font-semibold border-b pb-1 text-slate-800 dark:text-slate-200">
                         <input
                           type="checkbox"
@@ -3758,6 +3793,12 @@ export const FieldForcePage: React.FC = () => {
                         </label>
                       ))}
                     </div>
+                    {departmentError && (
+                      <p className="mt-1 text-[11px] font-semibold text-red-600 dark:text-red-400 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{departmentError}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

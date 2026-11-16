@@ -15352,7 +15352,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: newRep.name,
         native_name: newRep.nativeName,
         pin: newRep.pin,
-        phone: newRep.phone,
+        phone: newRep.phone ?? '',
         designation: newRep.designation,
         field_force_type: newRep.fieldForceType,
         department: newRep.department || null,
@@ -15488,7 +15488,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (updates.name !== undefined) payload.name = updates.name;
       if (updates.nativeName !== undefined) payload.native_name = updates.nativeName;
       if (updates.pin !== undefined) payload.pin = updates.pin;
-      if (updates.phone !== undefined) payload.phone = updates.phone;
+      if (updates.phone !== undefined) payload.phone = updates.phone ?? '';
       if (updates.email !== undefined) payload.email = updates.email;
       if (updates.designation !== undefined) payload.designation = updates.designation;
       if (updates.fieldForceType !== undefined) payload.field_force_type = updates.fieldForceType;
