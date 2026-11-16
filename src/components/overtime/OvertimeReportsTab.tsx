@@ -364,9 +364,16 @@ export const OvertimeReportsTab: React.FC = () => {
     return `${monthName}-${activeYearNum}`;
   }, [monthFilter, activeYearNum, activeMonthNum]);
 
+  const daysInActiveMonth = useMemo(
+    () => new Date(activeYearNum, activeMonthNum, 0).getDate(),
+    [activeYearNum, activeMonthNum]
+  );
+
+  const totalTableCols = 9 + daysInActiveMonth + 4;
+
   const dayHeaders = useMemo(() => {
     const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return Array.from({ length: 31 }, (_, i) => {
+    return Array.from({ length: daysInActiveMonth }, (_, i) => {
       const dayNum = i + 1;
       const dt = new Date(activeYearNum, activeMonthNum - 1, dayNum);
       return {
@@ -374,7 +381,7 @@ export const OvertimeReportsTab: React.FC = () => {
         weekday: shortWeekdays[dt.getDay()],
       };
     });
-  }, [activeYearNum, activeMonthNum]);
+  }, [activeYearNum, activeMonthNum, daysInActiveMonth]);
 
   const stripDepartmentCode = (raw: string): string => {
     let result = String(raw || '').trim();
@@ -606,7 +613,7 @@ export const OvertimeReportsTab: React.FC = () => {
         standardMonthlyWorkingHours: workDay * dailyWorkingHours,
       };
 
-      const dailyHours = new Array(31).fill(0);
+      const dailyHours = new Array(daysInActiveMonth).fill(0);
       let totalHours = 0;
       let totalAmount = 0;
       const coveredDates = new Set<string>();
@@ -629,7 +636,7 @@ export const OvertimeReportsTab: React.FC = () => {
 
         if (parsed) {
           coveredDates.add(parsed.ymd);
-          if (parsed.day >= 1 && parsed.day <= 31 && hrs > 0) {
+          if (parsed.day >= 1 && parsed.day <= daysInActiveMonth && hrs > 0) {
             dailyHours[parsed.day - 1] += hrs;
           }
         }
@@ -654,7 +661,7 @@ export const OvertimeReportsTab: React.FC = () => {
             : Number(att.rawCalculatedHours || 0);
         if (parsed) {
           coveredDates.add(parsed.ymd);
-          if (parsed.day >= 1 && parsed.day <= 31 && hrs > 0) {
+          if (parsed.day >= 1 && parsed.day <= daysInActiveMonth && hrs > 0) {
             dailyHours[parsed.day - 1] += hrs;
           }
         }
@@ -670,7 +677,7 @@ export const OvertimeReportsTab: React.FC = () => {
         const hrs = Number(ot.hours || 0);
         if (parsed) {
           coveredDates.add(parsed.ymd);
-          if (parsed.day >= 1 && parsed.day <= 31 && hrs > 0) {
+          if (parsed.day >= 1 && parsed.day <= daysInActiveMonth && hrs > 0) {
             dailyHours[parsed.day - 1] += hrs;
           }
         }
@@ -690,7 +697,7 @@ export const OvertimeReportsTab: React.FC = () => {
         const hrs = Number(att.overtimeHours || 0);
         if (parsed) {
           coveredDates.add(parsed.ymd);
-          if (parsed.day >= 1 && parsed.day <= 31 && hrs > 0) {
+          if (parsed.day >= 1 && parsed.day <= daysInActiveMonth && hrs > 0) {
             dailyHours[parsed.day - 1] += hrs;
           }
         }
@@ -716,7 +723,7 @@ export const OvertimeReportsTab: React.FC = () => {
       };
     });
 
-    const dailyTotals = new Array(31).fill(0);
+    const dailyTotals = new Array(daysInActiveMonth).fill(0);
     let grandTotalHours = 0;
     let grandTotalAmount = 0;
 
@@ -751,6 +758,7 @@ export const OvertimeReportsTab: React.FC = () => {
     activeYearMonth,
     activeYearNum,
     activeMonthNum,
+    daysInActiveMonth,
     overtimePolicies,
     payrollSettings,
     getEmployeeEffectiveOvertimePolicy,
@@ -824,13 +832,13 @@ export const OvertimeReportsTab: React.FC = () => {
       sheetRows.push(['', `TK. ${deptOvertimeSheet.amountInWords} Only .`]);
       sheetRows.push([]);
       sheetRows.push([]);
-      sheetRows.push(['', 'Prepared By', '', '', 'Checked By', ...Array(36).fill(''), 'Approved BY']);
+      sheetRows.push(['', 'Prepared By', '', '', 'Checked By', ...Array(Math.max(1, totalTableCols - 8)).fill(''), 'Approved BY']);
 
       const ws = XLSX.utils.aoa_to_sheet(sheetRows);
       ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 43 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 43 } },
-        { s: { r: 2, c: 0 }, e: { r: 2, c: 43 } },
+        { s: { r: 0, c: 0 }, e: { r: 0, c: totalTableCols - 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: totalTableCols - 1 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: totalTableCols - 1 } },
         { s: { r: 5 + deptOvertimeSheet.rows.length, c: 0 }, e: { r: 5 + deptOvertimeSheet.rows.length, c: 2 } },
       ];
       const wb = XLSX.utils.book_new();
@@ -1229,7 +1237,7 @@ export const OvertimeReportsTab: React.FC = () => {
                 {/* Month Banner Row spanning full table width */}
                 <tr>
                   <th
-                    colSpan={44}
+                    colSpan={totalTableCols}
                     className="border border-black py-0.5 px-2 text-center font-bold text-[11px] bg-white"
                   >
                     For the month of &nbsp;{monthHeadingLabel}
@@ -1299,7 +1307,7 @@ export const OvertimeReportsTab: React.FC = () => {
                 {deptOvertimeSheet.rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={44}
+                      colSpan={totalTableCols}
                       className="border border-black py-6 text-center text-[11px] font-sans text-slate-500"
                     >
                       No employees or overtime records found for the selected filters.
