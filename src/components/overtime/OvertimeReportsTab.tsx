@@ -21,7 +21,7 @@ interface DeptBillRow {
   sn: number;
   empId: string;
   name: string;
-  department: string;
+  employmentType: string;
   gender: string;
   monthlySalary: number;
   workDay: number;
@@ -340,7 +340,7 @@ export const OvertimeReportsTab: React.FC = () => {
       id: string;
       code: string;
       name: string;
-      department: string;
+      employmentType: string;
       gender: string;
       basicSalaryBDT: number;
       phone: string;
@@ -363,7 +363,7 @@ export const OvertimeReportsTab: React.FC = () => {
         id: rep.id,
         code: rep.code || rep.id,
         name: rep.name || 'Worker',
-        department: rep.department || rep.departments?.[0] || '-',
+        employmentType: rep.employmentType || (rep as any).employment_type || '-',
         gender: rep.gender || '-',
         basicSalaryBDT: Number(str?.basicSalaryBDT ?? rep.basicSalaryBDT ?? 0),
         phone: rep.phone || '',
@@ -410,7 +410,7 @@ export const OvertimeReportsTab: React.FC = () => {
         id: key,
         code: matchedRep?.code || rec.employeeCode || key,
         name: matchedRep?.name || rec.employeeName || 'Worker',
-        department: repDept,
+        employmentType: matchedRep?.employmentType || (matchedRep as any)?.employment_type || '-',
         gender: matchedRep?.gender || '-',
         basicSalaryBDT: Number(str?.basicSalaryBDT ?? rec.basicSalaryBDT ?? matchedRep?.basicSalaryBDT ?? 0),
         phone: matchedRep?.phone || '',
@@ -537,7 +537,7 @@ export const OvertimeReportsTab: React.FC = () => {
         sn: index + 1,
         empId: emp.code,
         name: emp.name,
-        department: emp.department,
+        employmentType: emp.employmentType,
         gender: emp.gender,
         monthlySalary,
         workDay,
@@ -600,7 +600,7 @@ export const OvertimeReportsTab: React.FC = () => {
         'S/N',
         'EMP ID',
         'Name Of Worker',
-        'Department',
+        'Employment Type',
         'Gender',
         'Monthly Salary',
         'Work Day',
@@ -618,7 +618,7 @@ export const OvertimeReportsTab: React.FC = () => {
           row.sn,
           row.empId,
           row.name,
-          row.department,
+          row.employmentType,
           row.gender,
           row.monthlySalary,
           row.workDay,
@@ -1016,7 +1016,7 @@ export const OvertimeReportsTab: React.FC = () => {
                   <th className="border border-black px-1.5 py-1 whitespace-nowrap">S/N</th>
                   <th className="border border-black px-1.5 py-1 whitespace-nowrap">EMP ID</th>
                   <th className="border border-black px-2 py-1 whitespace-nowrap">Name Of Worker</th>
-                  <th className="border border-black px-2 py-1 whitespace-nowrap">Department</th>
+                  <th className="border border-black px-2 py-1 whitespace-nowrap">Employment Type</th>
                   <th className="border border-black px-1.5 py-1 whitespace-nowrap">Gender</th>
                   <th className="border border-black px-1.5 py-1 whitespace-nowrap">Monthly Salary</th>
                   <th className="border border-black px-1.5 py-1 whitespace-nowrap">Work Day</th>
@@ -1066,7 +1066,7 @@ export const OvertimeReportsTab: React.FC = () => {
                         {row.name}
                       </td>
                       <td className="border border-black px-1.5 py-0.5 text-center whitespace-nowrap font-sans">
-                        {row.department}
+                        {row.employmentType}
                       </td>
                       <td className="border border-black px-1.5 py-0.5 text-center whitespace-nowrap font-sans">
                         {row.gender}
