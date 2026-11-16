@@ -373,9 +373,13 @@ export function calculateEmployeeIndividualOvertime(
   const divisor = (policy?.standardMonthlyWorkingHours && policy.standardMonthlyWorkingHours > 0)
     ? policy.standardMonthlyWorkingHours
     : 208;
-  const multiplier = (policy?.overtimeMultiplier !== undefined && policy.overtimeMultiplier > 0)
-    ? policy.overtimeMultiplier
-    : 2.0;
+  const multiplier =
+    policy?.overtimeMultiplier !== undefined &&
+    policy?.overtimeMultiplier !== null &&
+    !Number.isNaN(Number(policy.overtimeMultiplier)) &&
+    Number(policy.overtimeMultiplier) >= 0
+      ? Number(policy.overtimeMultiplier)
+      : 2.0;
 
   let hourlyRate = 0;
   if (calculationBasis === 'Fixed Hourly Rate') {

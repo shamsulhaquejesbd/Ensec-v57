@@ -4119,7 +4119,12 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               isOvertimeEligible: row.is_overtime_eligible !== undefined ? Boolean(row.is_overtime_eligible) : (row.overtime_policy?.isEligible !== undefined ? Boolean(row.overtime_policy.isEligible) : true),
               overtimeCalculationBasis: row.overtime_calculation_basis || row.overtime_policy?.calculationBasis || 'Basic Salary',
               overtimeStandardMonthlyHours: Number(row.overtime_standard_hours) || Number(row.overtime_policy?.standardMonthlyWorkingHours) || 208,
-              overtimeMultiplier: Number(row.overtime_multiplier) || Number(row.overtime_policy?.overtimeMultiplier) || 2.0,
+              overtimeMultiplier:
+                row.overtime_multiplier !== null && row.overtime_multiplier !== undefined && !Number.isNaN(Number(row.overtime_multiplier))
+                  ? Number(row.overtime_multiplier)
+                  : row.overtime_policy?.overtimeMultiplier !== null && row.overtime_policy?.overtimeMultiplier !== undefined && !Number.isNaN(Number(row.overtime_policy.overtimeMultiplier))
+                    ? Number(row.overtime_policy.overtimeMultiplier)
+                    : 2.0,
               overtimeFixedHourlyRateBDT: Number(row.overtime_fixed_rate) || Number(row.overtime_policy?.fixedHourlyRateBDT) || 0,
               overtimePolicyEffectiveFrom: row.overtime_effective_from || row.overtime_policy?.effectiveFrom || row.joining_date || undefined,
               overtimePolicyStatus: row.overtime_policy_status || row.overtime_policy?.status || (row.is_active === false ? 'Inactive' : 'Active'),
@@ -4388,7 +4393,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               : undefined,
           basicSalaryBDT: Number(r.basic_salary_bdt) || 0,
           hourlyRateBDT: Number(r.hourly_rate_bdt) || 0,
-          overtimeMultiplier: Number(r.overtime_multiplier) || 2.0,
+          overtimeMultiplier:
+            r.overtime_multiplier !== null && r.overtime_multiplier !== undefined && !Number.isNaN(Number(r.overtime_multiplier))
+              ? Number(r.overtime_multiplier)
+              : 2.0,
           calculatedOvertimeAmountBDT: Number(r.calculated_overtime_amount_bdt) || 0,
           batchAllocations: allocByRequest.get(String(r.id)) || [],
           isPayrollProcessed: Boolean(r.is_payroll_processed),
@@ -15403,7 +15411,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         is_overtime_eligible: newRep.isOvertimeEligible !== undefined ? newRep.isOvertimeEligible : true,
         overtime_calculation_basis: newRep.overtimeCalculationBasis || 'Basic Salary',
         overtime_standard_hours: newRep.overtimeStandardMonthlyHours || 208,
-        overtime_multiplier: newRep.overtimeMultiplier || 2.0,
+        overtime_multiplier: newRep.overtimeMultiplier ?? 2.0,
         overtime_fixed_rate: newRep.overtimeFixedHourlyRateBDT || 0,
         overtime_effective_from: newRep.overtimePolicyEffectiveFrom || newRep.joiningDate || null,
         overtime_policy_status: newRep.overtimePolicyStatus || 'Active',
@@ -20130,7 +20138,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isEligible: emp.isOvertimeEligible !== undefined ? Boolean(emp.isOvertimeEligible) : true,
         calculationBasis: (emp.overtimeCalculationBasis as OvertimeCalculationBasis) || 'Basic Salary',
         standardMonthlyWorkingHours: Number(emp.overtimeStandardMonthlyHours) || 208,
-        overtimeMultiplier: Number(emp.overtimeMultiplier) || 2.0,
+        overtimeMultiplier:
+          emp.overtimeMultiplier !== undefined && emp.overtimeMultiplier !== null && !Number.isNaN(Number(emp.overtimeMultiplier))
+            ? Number(emp.overtimeMultiplier)
+            : 2.0,
         fixedHourlyRateBDT: Number(emp.overtimeFixedHourlyRateBDT) || 0,
         effectiveFrom: emp.overtimePolicyEffectiveFrom || emp.joiningDate || '2026-01-01',
         status: (emp.overtimePolicyStatus as any) || (emp.isActive === false ? 'Inactive' : 'Active'),
@@ -20172,7 +20183,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isEligible: emp.isOvertimeEligible !== undefined ? Boolean(emp.isOvertimeEligible) : true,
       calculationBasis: (emp.overtimeCalculationBasis as OvertimeCalculationBasis) || 'Basic Salary',
       standardMonthlyWorkingHours: Number(emp.overtimeStandardMonthlyHours) || 208,
-      overtimeMultiplier: Number(emp.overtimeMultiplier) || 2.0,
+      overtimeMultiplier:
+        emp.overtimeMultiplier !== undefined && emp.overtimeMultiplier !== null && !Number.isNaN(Number(emp.overtimeMultiplier))
+          ? Number(emp.overtimeMultiplier)
+          : 2.0,
       fixedHourlyRateBDT: Number(emp.overtimeFixedHourlyRateBDT) || 0,
       effectiveFrom: emp.overtimePolicyEffectiveFrom || emp.joiningDate || '2026-01-01',
       effectiveTo: todayStr,
@@ -20306,7 +20320,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           status: newRequest.status,
           basic_salary_bdt: newRequest.basicSalaryBDT || 0,
           hourly_rate_bdt: newRequest.hourlyRateBDT || 0,
-          overtime_multiplier: newRequest.overtimeMultiplier || 2.0,
+          overtime_multiplier: newRequest.overtimeMultiplier ?? 2.0,
           calculated_overtime_amount_bdt: newRequest.calculatedOvertimeAmountBDT || 0,
           is_payroll_processed: false,
           is_costing_allocated: false,
@@ -20669,7 +20683,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const linkedReq = overtimeRequests.find((r) => r.id === att.requestId);
       if (linkedReq) {
         const hRate = linkedReq.hourlyRateBDT || 135;
-        const mult = linkedReq.overtimeMultiplier || 2.0;
+        const mult = linkedReq.overtimeMultiplier ?? 2.0;
         const tot = calculateOvertimeTotalBDT(hRate, mult, hours);
         setOvertimeRequests((prev) =>
           prev.map((r) =>
@@ -20755,7 +20769,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const linkedReq = overtimeRequests.find((r) => r.id === targetAtt.requestId);
       if (linkedReq) {
         const hRate = linkedReq.hourlyRateBDT || 135;
-        const mult = linkedReq.overtimeMultiplier || 2.0;
+        const mult = linkedReq.overtimeMultiplier ?? 2.0;
         const tot = calculateOvertimeTotalBDT(hRate, mult, finalHours);
         setOvertimeRequests((reqs) =>
           reqs.map((r) =>

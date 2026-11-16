@@ -248,7 +248,7 @@ export const FieldForcePage: React.FC = () => {
   const [formIsOvertimeEligible, setFormIsOvertimeEligible] = useState<boolean>(true);
   const [formOvertimeCalculationBasis, setFormOvertimeCalculationBasis] = useState<'Basic Salary' | 'Fixed Hourly Rate'>('Basic Salary');
   const [formOvertimeStandardHours, setFormOvertimeStandardHours] = useState<number>(208);
-  const [formOvertimeMultiplier, setFormOvertimeMultiplier] = useState<number>(2.0);
+  const [formOvertimeMultiplier, setFormOvertimeMultiplier] = useState<number | ''>(2.0);
   const [formOvertimeFixedRate, setFormOvertimeFixedRate] = useState<number>(0);
   const [formOvertimeEffectiveFrom, setFormOvertimeEffectiveFrom] = useState<string>(new Date().toISOString().substring(0, 10));
   const [formOvertimePolicyStatus, setFormOvertimePolicyStatus] = useState<'Active' | 'Inactive'>('Active');
@@ -522,7 +522,11 @@ export const FieldForcePage: React.FC = () => {
     setFormIsOvertimeEligible(rep.isOvertimeEligible !== undefined ? Boolean(rep.isOvertimeEligible) : true);
     setFormOvertimeCalculationBasis(rep.overtimeCalculationBasis || 'Basic Salary');
     setFormOvertimeStandardHours(Number(rep.overtimeStandardMonthlyHours) || 208);
-    setFormOvertimeMultiplier(Number(rep.overtimeMultiplier) || 2.0);
+    setFormOvertimeMultiplier(
+      rep.overtimeMultiplier !== undefined && rep.overtimeMultiplier !== null && !Number.isNaN(Number(rep.overtimeMultiplier))
+        ? Number(rep.overtimeMultiplier)
+        : 2.0
+    );
     setFormOvertimeFixedRate(Number(rep.overtimeFixedHourlyRateBDT) || 0);
     setFormOvertimeEffectiveFrom(rep.overtimePolicyEffectiveFrom || rep.joiningDate || new Date().toISOString().substring(0, 10));
     setFormOvertimePolicyStatus(rep.overtimePolicyStatus || (rep.isActive === false ? 'Inactive' : 'Active'));
@@ -759,7 +763,10 @@ export const FieldForcePage: React.FC = () => {
       isOvertimeEligible: formIsOvertimeEligible,
       overtimeCalculationBasis: formOvertimeCalculationBasis,
       overtimeStandardMonthlyHours: Number(formOvertimeStandardHours) || 208,
-      overtimeMultiplier: Number(formOvertimeMultiplier) || 2.0,
+      overtimeMultiplier:
+        formOvertimeMultiplier === '' || Number.isNaN(Number(formOvertimeMultiplier))
+          ? 0
+          : Math.max(0, Number(formOvertimeMultiplier)),
       overtimeFixedHourlyRateBDT: Number(formOvertimeFixedRate) || 0,
       overtimePolicyEffectiveFrom: formOvertimeEffectiveFrom,
       overtimePolicyStatus: formOvertimePolicyStatus,
@@ -814,7 +821,7 @@ export const FieldForcePage: React.FC = () => {
       editingRep.isOvertimeEligible !== formIsOvertimeEligible ||
       (editingRep.overtimeCalculationBasis || 'Basic Salary') !== formOvertimeCalculationBasis ||
       Number(editingRep.overtimeStandardMonthlyHours || 208) !== Number(formOvertimeStandardHours) ||
-      Number(editingRep.overtimeMultiplier || 2.0) !== Number(formOvertimeMultiplier) ||
+      Number(editingRep.overtimeMultiplier ?? 2.0) !== (formOvertimeMultiplier === '' ? 0 : Number(formOvertimeMultiplier)) ||
       Number(editingRep.overtimeFixedHourlyRateBDT || 0) !== Number(formOvertimeFixedRate) ||
       (editingRep.overtimePolicyStatus || 'Active') !== formOvertimePolicyStatus;
 
@@ -826,7 +833,7 @@ export const FieldForcePage: React.FC = () => {
         isEligible: editingRep.isOvertimeEligible !== false,
         calculationBasis: (editingRep.overtimeCalculationBasis as any) || 'Basic Salary',
         standardMonthlyWorkingHours: Number(editingRep.overtimeStandardMonthlyHours) || 208,
-        overtimeMultiplier: Number(editingRep.overtimeMultiplier) || 2.0,
+        overtimeMultiplier: editingRep.overtimeMultiplier ?? 2.0,
         fixedHourlyRateBDT: Number(editingRep.overtimeFixedHourlyRateBDT) || 0,
         effectiveFrom: editingRep.overtimePolicyEffectiveFrom || editingRep.joiningDate || '2026-01-01',
         effectiveTo: formOvertimeEffectiveFrom || new Date().toISOString().substring(0, 10),
@@ -880,7 +887,10 @@ export const FieldForcePage: React.FC = () => {
       isOvertimeEligible: formIsOvertimeEligible,
       overtimeCalculationBasis: formOvertimeCalculationBasis,
       overtimeStandardMonthlyHours: Number(formOvertimeStandardHours) || 208,
-      overtimeMultiplier: Number(formOvertimeMultiplier) || 2.0,
+      overtimeMultiplier:
+        formOvertimeMultiplier === '' || Number.isNaN(Number(formOvertimeMultiplier))
+          ? 0
+          : Math.max(0, Number(formOvertimeMultiplier)),
       overtimeFixedHourlyRateBDT: Number(formOvertimeFixedRate) || 0,
       overtimePolicyEffectiveFrom: formOvertimeEffectiveFrom,
       overtimePolicyStatus: formOvertimePolicyStatus,
@@ -2641,13 +2651,16 @@ export const FieldForcePage: React.FC = () => {
                         <input
                           type="number"
                           step="0.1"
-                          min="1.0"
+                          min="0"
                           max="5.0"
                           value={formOvertimeMultiplier}
-                          onChange={(e) => setFormOvertimeMultiplier(Number(e.target.value) || 2.0)}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            setFormOvertimeMultiplier(raw === '' ? '' : Math.max(0, Number(raw)));
+                          }}
                           disabled={!formIsOvertimeEligible}
                           className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold disabled:opacity-50"
-                          placeholder="2.0"
+                          placeholder="0"
                         />
                         <div className="flex gap-1">
                           {[1.5, 2.0].map((m) => (
@@ -2750,8 +2763,8 @@ export const FieldForcePage: React.FC = () => {
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">
                           {formOvertimeCalculationBasis === 'Fixed Hourly Rate'
-                            ? `Fixed Rate: ৳${formOvertimeFixedRate}/hr × ${formOvertimeMultiplier}x`
-                            : `Basic ৳${(Number(basicSalaryBDT) || 0).toLocaleString()} ÷ ${formOvertimeStandardHours}h × ${formOvertimeMultiplier}x`}
+                            ? `Fixed Rate: ৳${formOvertimeFixedRate}/hr × ${formOvertimeMultiplier === '' ? 0 : formOvertimeMultiplier}x`
+                            : `Basic ৳${(Number(basicSalaryBDT) || 0).toLocaleString()} ÷ ${formOvertimeStandardHours}h × ${formOvertimeMultiplier === '' ? 0 : formOvertimeMultiplier}x`}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1 border-t border-slate-800">
@@ -2766,7 +2779,7 @@ export const FieldForcePage: React.FC = () => {
                         <div>
                           <span className="text-slate-400 block text-[10px]">Multiplier:</span>
                           <span className="font-mono font-bold text-amber-400 text-xs">
-                            {formOvertimeMultiplier}x
+                            {formOvertimeMultiplier === '' ? 0 : formOvertimeMultiplier}x
                           </span>
                         </div>
                         <div>
@@ -2776,7 +2789,7 @@ export const FieldForcePage: React.FC = () => {
                               (formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                                 ? Number(formOvertimeFixedRate || 0)
                                 : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208))) *
-                              Number(formOvertimeMultiplier || 2.0)
+                              (formOvertimeMultiplier === '' ? 0 : Number(formOvertimeMultiplier) || 0)
                             ).toFixed(2)} / hr
                           </span>
                         </div>
@@ -2787,7 +2800,7 @@ export const FieldForcePage: React.FC = () => {
                               (formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                                 ? Number(formOvertimeFixedRate || 0)
                                 : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208))) *
-                              Number(formOvertimeMultiplier || 2.0) * 2
+                              (formOvertimeMultiplier === '' ? 0 : Number(formOvertimeMultiplier) || 0) * 2
                             ).toLocaleString()}
                           </span>
                         </div>
@@ -4051,13 +4064,16 @@ export const FieldForcePage: React.FC = () => {
                         <input
                           type="number"
                           step="0.1"
-                          min="1.0"
+                          min="0"
                           max="5.0"
                           value={formOvertimeMultiplier}
-                          onChange={(e) => setFormOvertimeMultiplier(Number(e.target.value) || 2.0)}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            setFormOvertimeMultiplier(raw === '' ? '' : Math.max(0, Number(raw)));
+                          }}
                           disabled={!formIsOvertimeEligible}
                           className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold disabled:opacity-50"
-                          placeholder="2.0"
+                          placeholder="0"
                         />
                         <div className="flex gap-1">
                           {[1.5, 2.0].map((m) => (
@@ -4160,8 +4176,8 @@ export const FieldForcePage: React.FC = () => {
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">
                           {formOvertimeCalculationBasis === 'Fixed Hourly Rate'
-                            ? `Fixed Rate: ৳${formOvertimeFixedRate}/hr × ${formOvertimeMultiplier}x`
-                            : `Basic ৳${(Number(basicSalaryBDT) || 0).toLocaleString()} ÷ ${formOvertimeStandardHours}h × ${formOvertimeMultiplier}x`}
+                            ? `Fixed Rate: ৳${formOvertimeFixedRate}/hr × ${formOvertimeMultiplier === '' ? 0 : formOvertimeMultiplier}x`
+                            : `Basic ৳${(Number(basicSalaryBDT) || 0).toLocaleString()} ÷ ${formOvertimeStandardHours}h × ${formOvertimeMultiplier === '' ? 0 : formOvertimeMultiplier}x`}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1 border-t border-slate-800">
@@ -4176,7 +4192,7 @@ export const FieldForcePage: React.FC = () => {
                         <div>
                           <span className="text-slate-400 block text-[10px]">Multiplier:</span>
                           <span className="font-mono font-bold text-amber-400 text-xs">
-                            {formOvertimeMultiplier}x
+                            {formOvertimeMultiplier === '' ? 0 : formOvertimeMultiplier}x
                           </span>
                         </div>
                         <div>
@@ -4186,7 +4202,7 @@ export const FieldForcePage: React.FC = () => {
                               (formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                                 ? Number(formOvertimeFixedRate || 0)
                                 : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208))) *
-                              Number(formOvertimeMultiplier || 2.0)
+                              (formOvertimeMultiplier === '' ? 0 : Number(formOvertimeMultiplier) || 0)
                             ).toFixed(2)} / hr
                           </span>
                         </div>
@@ -4197,7 +4213,7 @@ export const FieldForcePage: React.FC = () => {
                               (formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                                 ? Number(formOvertimeFixedRate || 0)
                                 : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208))) *
-                              Number(formOvertimeMultiplier || 2.0) * 2
+                              (formOvertimeMultiplier === '' ? 0 : Number(formOvertimeMultiplier) || 0) * 2
                             ).toLocaleString()}
                           </span>
                         </div>

@@ -128,7 +128,7 @@ export const OvertimeBatchAllocationTab: React.FC<OvertimeBatchAllocationTabProp
 
                     <td className="py-3.5 px-3 whitespace-nowrap">
                       <div className="font-mono font-semibold text-slate-900">{(req.actualOvertimeHours || req.expectedHours || 0).toFixed(2)} hrs</div>
-                      <div className="text-[11px] text-slate-400">Rate: ৳{(req.hourlyRateBDT || 0).toFixed(0)}/hr × {req.overtimeMultiplier || 2.0}x</div>
+                      <div className="text-[11px] text-slate-400">Rate: ৳{(req.hourlyRateBDT || 0).toFixed(0)}/hr × {req.overtimeMultiplier ?? 2.0}x</div>
                     </td>
 
                     <td className="py-3.5 px-3">

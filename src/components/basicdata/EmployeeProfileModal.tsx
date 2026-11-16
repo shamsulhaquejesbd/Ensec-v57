@@ -669,12 +669,12 @@ export const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                       </div>
                       <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <span className="text-slate-400 text-[10px] block uppercase">OT Multiplier</span>
-                        <b className="font-mono text-amber-600 dark:text-amber-400">{employee.overtimeMultiplier || 2.0}x</b>
+                        <b className="font-mono text-amber-600 dark:text-amber-400">{employee.overtimeMultiplier ?? 2.0}x</b>
                       </div>
                       <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <span className="text-slate-400 text-[10px] block uppercase">Calculated OT Rate</span>
                         <b className="font-mono text-emerald-600 dark:text-emerald-400">
-                          ৳{((Number(employee.overtimeFixedHourlyRateBDT) || ((employee.basicSalaryBDT || salaryStructure.basicSalaryBDT || 30000) / (employee.overtimeStandardMonthlyHours || 208))) * (employee.overtimeMultiplier || 2.0)).toFixed(2)}/hr
+                          ৳{((Number(employee.overtimeFixedHourlyRateBDT) || ((employee.basicSalaryBDT || salaryStructure.basicSalaryBDT || 30000) / (employee.overtimeStandardMonthlyHours || 208))) * (employee.overtimeMultiplier ?? 2.0)).toFixed(2)}/hr
                         </b>
                       </div>
                     </div>

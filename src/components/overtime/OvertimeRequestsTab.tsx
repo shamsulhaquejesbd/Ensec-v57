@@ -267,7 +267,7 @@ export const OvertimeRequestsTab: React.FC<OvertimeRequestsTabProps> = ({
                         {formatCurrency(req.calculatedOvertimeAmountBDT || 0)}
                       </span>
                       <span className="block text-[10px] text-slate-400">
-                        {req.overtimeMultiplier || 2.0}x Multiplier
+                        {req.overtimeMultiplier ?? 2.0}x Multiplier
                       </span>
                     </td>
 

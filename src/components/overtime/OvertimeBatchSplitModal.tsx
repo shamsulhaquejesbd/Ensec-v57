@@ -45,7 +45,7 @@ export const OvertimeBatchSplitModal: React.FC<OvertimeBatchSplitModalProps> = (
   } = useERP();
 
   const maxHours = request.actualOvertimeHours || request.expectedHours || 4.0;
-  const baseHourlyRate = (request.hourlyRateBDT || 135) * (request.overtimeMultiplier || 2.0);
+  const baseHourlyRate = (request.hourlyRateBDT || 135) * (request.overtimeMultiplier ?? 2.0);
 
   // Allocations state
   const [allocations, setAllocations] = useState<OvertimeBatchAllocation[]>(() => {

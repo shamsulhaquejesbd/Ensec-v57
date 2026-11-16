@@ -70,35 +70,7 @@ export const OvertimeModule: React.FC<OvertimeModuleProps> = ({ initialSubTab = 
         </div>
 
         <div className="flex items-center gap-2.5">
-          {confirmClearOt ? (
-            <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg">
-              <span className="text-[11px] font-semibold text-rose-800">Clear all OT data?</span>
-              <button
-                onClick={() => {
-                  clearOvertimeData();
-                  setConfirmClearOt(false);
-                }}
-                className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold rounded transition-colors"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => setConfirmClearOt(false)}
-                className="px-2 py-1 bg-white hover:bg-slate-100 text-slate-600 text-[11px] font-medium rounded border border-slate-200 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmClearOt(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-xs font-semibold rounded-lg border border-slate-200 hover:border-rose-200 transition-colors"
-              title="Remove test or local session memory data from Overtime Management"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-slate-500 hover:text-rose-600" />
-              Clear OT Data
-            </button>
-          )}
+          
           <button
             onClick={() => setIsAttendanceModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors"

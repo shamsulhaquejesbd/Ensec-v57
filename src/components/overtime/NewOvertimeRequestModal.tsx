@@ -84,9 +84,7 @@ export const NewOvertimeRequestModal: React.FC<NewOvertimeRequestModalProps> = (
   }, [fieldForceReps, employeeId]);
 
   // Selected Production Order & Batch
-  const [productionOrderId, setProductionOrderId] = useState<string>(
-    productionOrders[0]?.id || ''
-  );
+  const [productionOrderId, setProductionOrderId] = useState<string>('');
 
   const selectedOrder = useMemo(() => {
     return productionOrders.find((p) => p.id === productionOrderId) || null;
@@ -160,9 +158,9 @@ export const NewOvertimeRequestModal: React.FC<NewOvertimeRequestModalProps> = (
     e.preventDefault();
     if (!selectedEmployee) return;
 
-    const batchNo = customBatchNumber.trim() || selectedOrder?.batchNumber || 'KUS-B2610-01';
-    const orderNo = selectedOrder?.orderNumber || selectedOrder?.id || 'PO-PRD-2026-001';
-    const prodName = selectedOrder?.productName || 'Ensec 48V 100Ah Lithium Pack';
+    const batchNo = customBatchNumber.trim() || selectedOrder?.batchNumber || '';
+    const orderNo = selectedOrder?.orderNumber || selectedOrder?.id || productionOrderId || '';
+    const prodName = selectedOrder?.productName || '';
 
     const newReq = createOvertimeRequest({
       employeeId: selectedEmployee.id,
@@ -173,11 +171,11 @@ export const NewOvertimeRequestModal: React.FC<NewOvertimeRequestModalProps> = (
       employeeCategory: selectedEmployee.employeeCategory || 'Factory Employee',
       overtimeDate,
       purposeCategory,
-      productionOrderId: selectedOrder?.id,
-      productionOrderNumber: orderNo,
-      productionBatchNumber: batchNo,
-      productName: prodName,
-      projectPurpose: projectPurpose.trim() || `Production shift on batch ${batchNo}`,
+      productionOrderId: selectedOrder?.id || (productionOrderId || undefined),
+      productionOrderNumber: orderNo || undefined,
+      productionBatchNumber: batchNo || undefined,
+      productName: prodName || undefined,
+      projectPurpose: projectPurpose.trim() || (batchNo ? `Production shift on batch ${batchNo}` : purposeCategory),
       expectedStartTime,
       expectedEndTime,
       expectedHours: liveCalculations.hours,
@@ -187,10 +185,10 @@ export const NewOvertimeRequestModal: React.FC<NewOvertimeRequestModalProps> = (
       batchAllocations: purposeCategory === 'Direct Production' ? [
         {
           id: `alloc-${Date.now()}`,
-          productionOrderId: selectedOrder?.id || 'po-1',
-          productionOrderNumber: orderNo,
-          productionBatchNumber: batchNo,
-          productName: prodName,
+          productionOrderId: selectedOrder?.id || productionOrderId || '',
+          productionOrderNumber: orderNo || 'UNASSIGNED',
+          productionBatchNumber: batchNo || 'UNASSIGNED',
+          productName: prodName || 'General Production',
           processType: 'Spot Welding & Busbar',
           allocatedHours: liveCalculations.hours,
           hourlyRateBDT: liveCalculations.hourlyRate * liveCalculations.multiplier,
@@ -445,6 +443,7 @@ export const NewOvertimeRequestModal: React.FC<NewOvertimeRequestModalProps> = (
                   onChange={(e) => setProductionOrderId(e.target.value)}
                   className="w-full py-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                 >
+                  <option value="">-- Select Production Order --</option>
                   {productionOrders.length > 0 ? (
                     productionOrders.map((po) => (
                       <option key={po.id} value={po.id}>

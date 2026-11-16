@@ -51,7 +51,7 @@ export const OvertimePolicySettingsTab: React.FC = () => {
   const [editIsEligible, setEditIsEligible] = useState<boolean>(true);
   const [editBasis, setEditBasis] = useState<OvertimeCalculationBasis>('Basic Salary');
   const [editStandardHours, setEditStandardHours] = useState<number>(208);
-  const [editMultiplier, setEditMultiplier] = useState<number>(2.0);
+  const [editMultiplier, setEditMultiplier] = useState<number | ''>(2.0);
   const [editFixedRate, setEditFixedRate] = useState<number>(0);
   const [editEffectiveFrom, setEditEffectiveFrom] = useState<string>(new Date().toISOString().substring(0, 10));
   const [editStatus, setEditStatus] = useState<'Active' | 'Inactive'>('Active');
@@ -108,7 +108,11 @@ export const OvertimePolicySettingsTab: React.FC = () => {
     setEditIsEligible(policy.isEligible);
     setEditBasis(policy.calculationBasis);
     setEditStandardHours(policy.standardMonthlyWorkingHours || 208);
-    setEditMultiplier(policy.overtimeMultiplier || 2.0);
+    setEditMultiplier(
+      policy.overtimeMultiplier !== undefined && policy.overtimeMultiplier !== null
+        ? policy.overtimeMultiplier
+        : 2.0
+    );
     setEditFixedRate(policy.fixedHourlyRateBDT || 0);
     setEditEffectiveFrom(policy.effectiveFrom || new Date().toISOString().substring(0, 10));
     setEditStatus(policy.status || 'Active');
@@ -127,7 +131,10 @@ export const OvertimePolicySettingsTab: React.FC = () => {
         isEligible: editIsEligible,
         calculationBasis: editBasis,
         standardMonthlyWorkingHours: Number(editStandardHours) || 208,
-        overtimeMultiplier: Number(editMultiplier) || 2.0,
+        overtimeMultiplier:
+          editMultiplier === '' || Number.isNaN(Number(editMultiplier))
+            ? 0
+            : Math.max(0, Number(editMultiplier)),
         fixedHourlyRateBDT: Number(editFixedRate) || 0,
         effectiveFrom: editEffectiveFrom,
         status: editStatus,
@@ -148,13 +155,17 @@ export const OvertimePolicySettingsTab: React.FC = () => {
     if (!editingEmployee) return { hourly: 0, netRate: 0 };
     const str = salaryStructures.find((s) => s.employeeId === editingEmployee.id);
     const basic = str ? str.basicSalaryBDT : (editingEmployee.basicSalaryBDT || 30000);
+    const numericMultiplier =
+      editMultiplier === '' || Number.isNaN(Number(editMultiplier))
+        ? 0
+        : Math.max(0, Number(editMultiplier));
     const calc = calculateEmployeeIndividualOvertime(
       basic,
       {
         isEligible: editIsEligible,
         calculationBasis: editBasis,
         standardMonthlyWorkingHours: editStandardHours,
-        overtimeMultiplier: editMultiplier,
+        overtimeMultiplier: numericMultiplier,
         fixedHourlyRateBDT: editFixedRate,
         status: editStatus,
       },
@@ -540,10 +551,14 @@ export const OvertimePolicySettingsTab: React.FC = () => {
                     <input
                       type="number"
                       step="0.1"
-                      min="1.0"
+                      min="0"
                       max="5.0"
+                      required
                       value={editMultiplier}
-                      onChange={(e) => setEditMultiplier(Number(e.target.value) || 2.0)}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setEditMultiplier(raw === '' ? '' : Math.max(0, Number(raw)));
+                      }}
                       disabled={!editIsEligible}
                       className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold"
                     />
@@ -640,8 +655,8 @@ export const OvertimePolicySettingsTab: React.FC = () => {
                   </span>
                   <span className="text-[10px] text-slate-400 font-mono">
                     {editBasis === 'Fixed Hourly Rate'
-                      ? `Flat ৳${editFixedRate}/hr × ${editMultiplier}x`
-                      : `Basic ৳${editPreview.basic.toLocaleString()} ÷ ${editStandardHours}h × ${editMultiplier}x`}
+                      ? `Flat ৳${editFixedRate}/hr × ${editMultiplier === '' ? 0 : editMultiplier}x`
+                      : `Basic ৳${editPreview.basic.toLocaleString()} ÷ ${editStandardHours}h × ${editMultiplier === '' ? 0 : editMultiplier}x`}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-[11px] pt-1 border-t border-slate-800">
