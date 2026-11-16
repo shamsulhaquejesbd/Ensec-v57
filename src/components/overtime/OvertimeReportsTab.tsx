@@ -166,6 +166,8 @@ export const OvertimeReportsTab: React.FC = () => {
 
   const [activeReport, setActiveReport] = useState<number>(1);
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState('all');
+  const [genderFilter, setGenderFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState(() => new Date().toISOString().slice(0, 7));
   const [employeeFilter, setEmployeeFilter] = useState('all');
   const hasUserChangedMonthRef = useRef(false);
@@ -221,10 +223,68 @@ export const OvertimeReportsTab: React.FC = () => {
     ])
   );
 
+  const STANDARD_EMPLOYMENT_TYPES = [
+    'Supervisor',
+    'Operator',
+    'Maintenance',
+    'Assist. M/O',
+    'Machine.Operator',
+    'Mfg & Pack',
+    'Office peone',
+    'Asst. Store Keeper',
+    'Lab Assisten',
+    'Cleaner',
+    'Packing',
+    'Security Guard',
+  ];
+
+  const availableEmploymentTypes = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...STANDARD_EMPLOYMENT_TYPES,
+          ...fieldForceReps
+            .map((r) => String(r.employmentType || (r as any).employment_type || '').trim())
+            .filter(Boolean),
+        ])
+      ),
+    [fieldForceReps]
+  );
+
+  const availableGenders = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          'Male',
+          'Female',
+          ...fieldForceReps
+            .map((r) => String(r.gender || '').trim())
+            .filter(Boolean),
+        ])
+      ),
+    [fieldForceReps]
+  );
+
   const selectedEmployeeFilterObj = useMemo(
     () => (employeeFilter === 'all' ? null : fieldForceReps.find((r) => r.id === employeeFilter) || null),
     [employeeFilter, fieldForceReps]
   );
+
+  const matchesEmpTypeAndGender = (empType?: string, empGender?: string) => {
+    if (
+      employmentTypeFilter !== 'all' &&
+      normStr(empType) !== normStr(employmentTypeFilter)
+    ) {
+      return false;
+    }
+    if (
+      genderFilter !== 'all' &&
+      normStr(empGender) !== normStr(genderFilter)
+    ) {
+      return false;
+    }
+    return true;
+  };
 
   const filteredRequests = overtimeRequests.filter((r) => {
     const parsed = extractYMD(r.overtimeDate);
@@ -236,6 +296,17 @@ export const OvertimeReportsTab: React.FC = () => {
       if (selectedEmployeeFilterObj) {
         if (!matchesEmpIdentity(selectedEmployeeFilterObj, r)) return false;
       } else if (r.employeeId !== employeeFilter) {
+        return false;
+      }
+    }
+    if (employmentTypeFilter !== 'all' || genderFilter !== 'all') {
+      const matchedRep = fieldForceReps.find((e) => matchesEmpIdentity(e, r));
+      if (
+        !matchesEmpTypeAndGender(
+          matchedRep?.employmentType || (matchedRep as any)?.employment_type,
+          matchedRep?.gender
+        )
+      ) {
         return false;
       }
     }
@@ -373,7 +444,9 @@ export const OvertimeReportsTab: React.FC = () => {
         rep.department === departmentFilter ||
         (Array.isArray(rep.departments) && rep.departments.includes(departmentFilter));
       const empMatch = employeeFilter === 'all' || rep.id === employeeFilter;
-      if (!deptMatch || !empMatch) return;
+      const repEmpType = rep.employmentType || (rep as any).employment_type || '-';
+      const repGender = rep.gender || '-';
+      if (!deptMatch || !empMatch || !matchesEmpTypeAndGender(repEmpType, repGender)) return;
 
       const str = salaryStructures.find(
         (s) => s.employeeId === rep.id || (rep.code && s.employeeId === rep.code)
@@ -382,8 +455,8 @@ export const OvertimeReportsTab: React.FC = () => {
         id: rep.id,
         code: rep.code || rep.id,
         name: rep.name || 'Worker',
-        employmentType: rep.employmentType || (rep as any).employment_type || '-',
-        gender: rep.gender || '-',
+        employmentType: repEmpType,
+        gender: repGender,
         basicSalaryBDT: Number(str?.basicSalaryBDT ?? rep.basicSalaryBDT ?? 0),
         phone: rep.phone || '',
       });
@@ -420,6 +493,11 @@ export const OvertimeReportsTab: React.FC = () => {
       ) {
         return;
       }
+      const repEmpType = matchedRep?.employmentType || (matchedRep as any)?.employment_type || '-';
+      const repGender = matchedRep?.gender || '-';
+      if (!matchesEmpTypeAndGender(repEmpType, repGender)) {
+        return;
+      }
       const key = matchedRep?.id || rec.employeeId || rec.employeeCode || rec.employeeName || '';
       if (!key || empMap.has(key)) return;
       const str = salaryStructures.find(
@@ -429,8 +507,8 @@ export const OvertimeReportsTab: React.FC = () => {
         id: key,
         code: matchedRep?.code || rec.employeeCode || key,
         name: matchedRep?.name || rec.employeeName || 'Worker',
-        employmentType: matchedRep?.employmentType || (matchedRep as any)?.employment_type || '-',
-        gender: matchedRep?.gender || '-',
+        employmentType: repEmpType,
+        gender: repGender,
         basicSalaryBDT: Number(str?.basicSalaryBDT ?? rec.basicSalaryBDT ?? matchedRep?.basicSalaryBDT ?? 0),
         phone: matchedRep?.phone || '',
       });
@@ -596,6 +674,8 @@ export const OvertimeReportsTab: React.FC = () => {
     fieldForceReps,
     salaryStructures,
     departmentFilter,
+    employmentTypeFilter,
+    genderFilter,
     employeeFilter,
     selectedEmployeeFilterObj,
     monthFilter,
@@ -922,11 +1002,12 @@ export const OvertimeReportsTab: React.FC = () => {
 
       {/* Filters Bar */}
       <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-slate-400" />
           <span className="font-semibold text-slate-700">Filters:</span>
 
           <select
+            aria-label="Department"
             value={departmentFilter}
             onChange={(e) => setDepartmentFilter(e.target.value)}
             className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-700 bg-white"
@@ -938,6 +1019,31 @@ export const OvertimeReportsTab: React.FC = () => {
           </select>
 
           <select
+            aria-label="Employment Type"
+            value={employmentTypeFilter}
+            onChange={(e) => setEmploymentTypeFilter(e.target.value)}
+            className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-700 bg-white"
+          >
+            <option value="all">All Employment Types</option>
+            {availableEmploymentTypes.map((empType) => (
+              <option key={empType} value={empType}>{empType}</option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Gender"
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value)}
+            className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-700 bg-white"
+          >
+            <option value="all">All Genders</option>
+            {availableGenders.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Employee"
             value={employeeFilter}
             onChange={(e) => setEmployeeFilter(e.target.value)}
             className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-700 bg-white max-w-[200px]"
