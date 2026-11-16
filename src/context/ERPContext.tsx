@@ -4029,7 +4029,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               parentCode: row.parent_code || undefined,
               joiningDate: row.joining_date || undefined,
               discontinueDate: row.discontinue_date || undefined,
-              invoiceWithinDays: Number(row.invoice_within_days) || 3,
+              invoiceWithinDays:
+                row.invoice_within_days !== null && row.invoice_within_days !== undefined
+                  ? Number(row.invoice_within_days)
+                  : undefined,
               appPermissions: Array.isArray(row.app_permissions) ? row.app_permissions : (row.app_permissions ? [row.app_permissions] : []),
               fieldForceTags: Array.isArray(row.field_force_tags) ? row.field_force_tags : (row.field_force_tags ? [row.field_force_tags] : []),
               customerTags: Array.isArray(row.customer_tags) ? row.customer_tags : (row.customer_tags ? [row.customer_tags] : []),
@@ -4091,28 +4094,28 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               isActive: row.is_active !== false,
               status: row.is_active === false ? 'Inactive' : 'Active',
               // GPS Geofencing & Shift Configuration
-              assignedOfficeId: row.assigned_office_id || 'office-hq',
-              assignedOfficeName: row.assigned_office_name || row.branch_workplace || 'Head Office (Gulshan HQ)',
+              assignedOfficeId: row.assigned_office_id || undefined,
+              assignedOfficeName: row.assigned_office_name || row.branch_workplace || undefined,
               officeLatitude:
                 row.office_latitude !== null && row.office_latitude !== undefined
                   ? Number(row.office_latitude)
-                  : DEFAULT_OFFICE_LOCATIONS[0].latitude,
+                  : undefined,
               officeLongitude:
                 row.office_longitude !== null && row.office_longitude !== undefined
                   ? Number(row.office_longitude)
-                  : DEFAULT_OFFICE_LOCATIONS[0].longitude,
+                  : undefined,
               allowedRadiusMeters:
                 Number(row.allowed_radius_meters) > 0
                   ? Number(row.allowed_radius_meters)
-                  : DEFAULT_ALLOWED_RADIUS_METERS,
-              officeAddress: row.office_address || DEFAULT_OFFICE_LOCATIONS[0].address,
-              locationStatus: row.location_status === 'Inactive' ? 'Inactive' : 'Active',
-              shiftStartTime: row.shift_start_time || DEFAULT_SHIFT_START_TIME,
-              shiftEndTime: row.shift_end_time || DEFAULT_SHIFT_END_TIME,
+                  : undefined,
+              officeAddress: row.office_address || undefined,
+              locationStatus: row.location_status === 'Inactive' ? 'Inactive' : row.location_status === 'Active' ? 'Active' : undefined,
+              shiftStartTime: row.shift_start_time || undefined,
+              shiftEndTime: row.shift_end_time || undefined,
               gracePeriodMinutes:
                 row.grace_period_minutes !== null && row.grace_period_minutes !== undefined
                   ? Number(row.grace_period_minutes)
-                  : DEFAULT_GRACE_PERIOD_MINUTES,
+                  : undefined,
               isOvertimeEligible: row.is_overtime_eligible !== undefined ? Boolean(row.is_overtime_eligible) : (row.overtime_policy?.isEligible !== undefined ? Boolean(row.overtime_policy.isEligible) : true),
               overtimeCalculationBasis: row.overtime_calculation_basis || row.overtime_policy?.calculationBasis || 'Basic Salary',
               overtimeStandardMonthlyHours: Number(row.overtime_standard_hours) || Number(row.overtime_policy?.standardMonthlyWorkingHours) || 208,
@@ -15308,14 +15311,14 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newRep: FieldForceRep = {
       ...repData,
       id,
-      monthlyTargetBDT: repData.monthlyTargetBDT || 3000000,
+      monthlyTargetBDT: repData.monthlyTargetBDT ?? 0,
       monthlyAchievedBDT: repData.monthlyAchievedBDT || 0,
       todayVisitsCount: repData.todayVisitsCount || 0,
       productiveVisitsCount: repData.productiveVisitsCount || 0,
-      basicSalaryBDT: repData.basicSalaryBDT || 30000,
-      conveyanceBDT: repData.conveyanceBDT || 6000,
-      taDaBDT: repData.taDaBDT || 5000,
-      mobileAllowanceBDT: repData.mobileAllowanceBDT || 1500,
+      basicSalaryBDT: repData.basicSalaryBDT ?? 0,
+      conveyanceBDT: repData.conveyanceBDT ?? 0,
+      taDaBDT: repData.taDaBDT ?? 0,
+      mobileAllowanceBDT: repData.mobileAllowanceBDT ?? 0,
       currentLocation: repData.currentLocation || {
         latitude: 23.8103,
         longitude: 90.4125,
@@ -15373,7 +15376,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         parent_code: newRep.parentCode,
         joining_date: newRep.joiningDate || null,
         discontinue_date: newRep.discontinueDate || null,
-        invoice_within_days: newRep.invoiceWithinDays,
+        invoice_within_days: newRep.invoiceWithinDays ?? null,
         employee_category: newRep.employeeCategory,
         gender: newRep.gender || null,
         employment_type: newRep.employmentType,
@@ -15385,16 +15388,16 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         emergency_contact_relation: newRep.emergencyContactRelation,
         reporting_manager_id: newRep.reportingManagerId,
         reporting_manager_name: newRep.reportingManagerName,
-        branch_workplace: newRep.branchWorkplace,
-        bank_name: newRep.bankName,
-        bank_account_number: newRep.bankAccountNumber,
-        bank_branch: newRep.bankBranch,
-        routing_number: newRep.routingNumber,
-        mobile_banking_provider: newRep.mobileBankingProvider,
-        mobile_banking_number: newRep.mobileBankingNumber,
-        national_id: newRep.nationalId,
-        tada_approver_id: newRep.tadaApproverId,
-        tada_approver_name: newRep.tadaApproverName,
+        branch_workplace: newRep.branchWorkplace || null,
+        bank_name: newRep.bankName || null,
+        bank_account_number: newRep.bankAccountNumber || null,
+        bank_branch: newRep.bankBranch || null,
+        routing_number: newRep.routingNumber || null,
+        mobile_banking_provider: newRep.mobileBankingProvider || null,
+        mobile_banking_number: newRep.mobileBankingNumber || null,
+        national_id: newRep.nationalId || null,
+        tada_approver_id: newRep.tadaApproverId || null,
+        tada_approver_name: newRep.tadaApproverName || null,
         current_location: newRep.currentLocation,
         is_active: newRep.isActive !== false,
         is_overtime_eligible: newRep.isOvertimeEligible !== undefined ? newRep.isOvertimeEligible : true,
@@ -15406,16 +15409,16 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         overtime_policy_status: newRep.overtimePolicyStatus || 'Active',
         overtime_policy_notes: newRep.overtimePolicyNotes || null,
         overtime_policy_history: newRep.overtimePolicyHistory || [],
-        assigned_office_id: newRep.assignedOfficeId || 'office-hq',
-        assigned_office_name: newRep.assignedOfficeName || 'Head Office (Gulshan HQ)',
-        office_latitude: newRep.officeLatitude ?? DEFAULT_OFFICE_LOCATIONS[0].latitude,
-        office_longitude: newRep.officeLongitude ?? DEFAULT_OFFICE_LOCATIONS[0].longitude,
-        allowed_radius_meters: newRep.allowedRadiusMeters ?? DEFAULT_ALLOWED_RADIUS_METERS,
-        office_address: newRep.officeAddress || DEFAULT_OFFICE_LOCATIONS[0].address,
-        location_status: newRep.locationStatus || 'Active',
-        shift_start_time: newRep.shiftStartTime || DEFAULT_SHIFT_START_TIME,
-        shift_end_time: newRep.shiftEndTime || DEFAULT_SHIFT_END_TIME,
-        grace_period_minutes: newRep.gracePeriodMinutes ?? DEFAULT_GRACE_PERIOD_MINUTES,
+        assigned_office_id: newRep.assignedOfficeId || null,
+        assigned_office_name: newRep.assignedOfficeName || null,
+        office_latitude: newRep.officeLatitude ?? null,
+        office_longitude: newRep.officeLongitude ?? null,
+        allowed_radius_meters: newRep.allowedRadiusMeters ?? null,
+        office_address: newRep.officeAddress || null,
+        location_status: newRep.locationStatus || null,
+        shift_start_time: newRep.shiftStartTime || null,
+        shift_end_time: newRep.shiftEndTime || null,
+        grace_period_minutes: newRep.gracePeriodMinutes ?? null,
       };
 
       (async () => {
@@ -15530,8 +15533,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (updates.mobileBankingProvider !== undefined) payload.mobile_banking_provider = updates.mobileBankingProvider;
       if (updates.mobileBankingNumber !== undefined) payload.mobile_banking_number = updates.mobileBankingNumber;
       if (updates.nationalId !== undefined) payload.national_id = updates.nationalId;
-      if (updates.tadaApproverId !== undefined) payload.tada_approver_id = updates.tadaApproverId;
-      if (updates.tadaApproverName !== undefined) payload.tada_approver_name = updates.tadaApproverName;
+      if (updates.tadaApproverId !== undefined) payload.tada_approver_id = updates.tadaApproverId || null;
+      if (updates.tadaApproverName !== undefined) payload.tada_approver_name = updates.tadaApproverName || null;
       if (updates.isActive !== undefined) payload.is_active = updates.isActive;
       if (updates.isOvertimeEligible !== undefined) payload.is_overtime_eligible = updates.isOvertimeEligible;
       if (updates.overtimeCalculationBasis !== undefined) payload.overtime_calculation_basis = updates.overtimeCalculationBasis;
@@ -15542,16 +15545,16 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (updates.overtimePolicyStatus !== undefined) payload.overtime_policy_status = updates.overtimePolicyStatus;
       if (updates.overtimePolicyNotes !== undefined) payload.overtime_policy_notes = updates.overtimePolicyNotes;
       if (updates.overtimePolicyHistory !== undefined) payload.overtime_policy_history = updates.overtimePolicyHistory;
-      if (updates.assignedOfficeId !== undefined) payload.assigned_office_id = updates.assignedOfficeId;
-      if (updates.assignedOfficeName !== undefined) payload.assigned_office_name = updates.assignedOfficeName;
-      if (updates.officeLatitude !== undefined) payload.office_latitude = updates.officeLatitude;
-      if (updates.officeLongitude !== undefined) payload.office_longitude = updates.officeLongitude;
-      if (updates.allowedRadiusMeters !== undefined) payload.allowed_radius_meters = updates.allowedRadiusMeters;
-      if (updates.officeAddress !== undefined) payload.office_address = updates.officeAddress;
-      if (updates.locationStatus !== undefined) payload.location_status = updates.locationStatus;
-      if (updates.shiftStartTime !== undefined) payload.shift_start_time = updates.shiftStartTime;
-      if (updates.shiftEndTime !== undefined) payload.shift_end_time = updates.shiftEndTime;
-      if (updates.gracePeriodMinutes !== undefined) payload.grace_period_minutes = updates.gracePeriodMinutes;
+      if (updates.assignedOfficeId !== undefined) payload.assigned_office_id = updates.assignedOfficeId || null;
+      if (updates.assignedOfficeName !== undefined) payload.assigned_office_name = updates.assignedOfficeName || null;
+      if (updates.officeLatitude !== undefined) payload.office_latitude = updates.officeLatitude ?? null;
+      if (updates.officeLongitude !== undefined) payload.office_longitude = updates.officeLongitude ?? null;
+      if (updates.allowedRadiusMeters !== undefined) payload.allowed_radius_meters = updates.allowedRadiusMeters ?? null;
+      if (updates.officeAddress !== undefined) payload.office_address = updates.officeAddress || null;
+      if (updates.locationStatus !== undefined) payload.location_status = updates.locationStatus || null;
+      if (updates.shiftStartTime !== undefined) payload.shift_start_time = updates.shiftStartTime || null;
+      if (updates.shiftEndTime !== undefined) payload.shift_end_time = updates.shiftEndTime || null;
+      if (updates.gracePeriodMinutes !== undefined) payload.grace_period_minutes = updates.gracePeriodMinutes ?? null;
 
       const execUpdate = (p: any) =>
         !isNaN(Number(repId))

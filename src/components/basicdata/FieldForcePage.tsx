@@ -243,8 +243,8 @@ export const FieldForcePage: React.FC = () => {
   const [formMarketHierarchy, setFormMarketHierarchy] = useState('');
   const [marketHierarchySearch, setMarketHierarchySearch] = useState('');
   const [showMarketDropdown, setShowMarketDropdown] = useState(false);
-  const [formRegion, setFormRegion] = useState('Dhaka North');
-  const [formArea, setFormArea] = useState('Mirpur');
+  const [formRegion, setFormRegion] = useState('');
+  const [formArea, setFormArea] = useState('');
   const [formTerritory, setFormTerritory] = useState('');
 
   // Departments (Checklist with "All")
@@ -259,17 +259,17 @@ export const FieldForcePage: React.FC = () => {
 
   // Subordinate & Hierarchy
   const [parentCode, setParentCode] = useState('');
-  const [invoiceWithinDays, setInvoiceWithinDays] = useState<number>(3);
-  const [appPermissions, setAppPermissions] = useState('Full Mobile Order & GPS Telemetry');
-  const [fieldForceTags, setFieldForceTags] = useState('Core Field Force');
-  const [customerTags, setCustomerTags] = useState('All Customer Channels');
+  const [invoiceWithinDays, setInvoiceWithinDays] = useState<number | ''>('');
+  const [appPermissions, setAppPermissions] = useState('');
+  const [fieldForceTags, setFieldForceTags] = useState('');
+  const [customerTags, setCustomerTags] = useState('');
 
   // Compensation & Target
-  const [monthlyTargetBDT, setMonthlyTargetBDT] = useState<number>(2500000);
-  const [basicSalaryBDT, setBasicSalaryBDT] = useState<number>(30000);
-  const [formConveyanceBDT, setFormConveyanceBDT] = useState<number>(6000);
-  const [formTaDaBDT, setFormTaDaBDT] = useState<number>(5000);
-  const [formMobileAllowanceBDT, setFormMobileAllowanceBDT] = useState<number>(1500);
+  const [monthlyTargetBDT, setMonthlyTargetBDT] = useState<number | ''>('');
+  const [basicSalaryBDT, setBasicSalaryBDT] = useState<number | ''>('');
+  const [formConveyanceBDT, setFormConveyanceBDT] = useState<number | ''>('');
+  const [formTaDaBDT, setFormTaDaBDT] = useState<number | ''>('');
+  const [formMobileAllowanceBDT, setFormMobileAllowanceBDT] = useState<number | ''>('');
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
 
   // Comprehensive HR & Banking Details
@@ -281,24 +281,24 @@ export const FieldForcePage: React.FC = () => {
   const [formEmergencyContactName, setFormEmergencyContactName] = useState('');
   const [formEmergencyContactPhone, setFormEmergencyContactPhone] = useState('');
   const [formEmergencyContactRelation, setFormEmergencyContactRelation] = useState('');
-  const [formBankName, setFormBankName] = useState('Eastern Bank PLC');
+  const [formBankName, setFormBankName] = useState('');
   const [formBankAccountNumber, setFormBankAccountNumber] = useState('');
-  const [formBankBranch, setFormBankBranch] = useState('Gulshan Branch');
+  const [formBankBranch, setFormBankBranch] = useState('');
   const [formRoutingNumber, setFormRoutingNumber] = useState('');
   const [formMobileBankingProvider, setFormMobileBankingProvider] = useState('bKash');
   const [formMobileBankingNumber, setFormMobileBankingNumber] = useState('');
 
   // Office GPS Geofencing & Shift Assignment State
-  const [formAssignedOfficeId, setFormAssignedOfficeId] = useState<string>(officeLocations[0]?.id || 'office-hq');
-  const [formAssignedOfficeName, setFormAssignedOfficeName] = useState<string>(officeLocations[0]?.name || 'Head Office (Gulshan HQ)');
-  const [formOfficeLatitude, setFormOfficeLatitude] = useState<string>(String(officeLocations[0]?.latitude ?? 23.8103));
-  const [formOfficeLongitude, setFormOfficeLongitude] = useState<string>(String(officeLocations[0]?.longitude ?? 90.4125));
-  const [formAllowedRadiusMeters, setFormAllowedRadiusMeters] = useState<number>(officeLocations[0]?.allowedRadiusMeters || DEFAULT_ALLOWED_RADIUS_METERS);
-  const [formOfficeAddress, setFormOfficeAddress] = useState<string>(officeLocations[0]?.address || '');
-  const [formLocationStatus, setFormLocationStatus] = useState<'Active' | 'Inactive'>(officeLocations[0]?.status || 'Active');
-  const [formShiftStartTime, setFormShiftStartTime] = useState<string>(DEFAULT_SHIFT_START_TIME);
-  const [formShiftEndTime, setFormShiftEndTime] = useState<string>(DEFAULT_SHIFT_END_TIME);
-  const [formGracePeriodMinutes, setFormGracePeriodMinutes] = useState<number>(DEFAULT_GRACE_PERIOD_MINUTES);
+  const [formAssignedOfficeId, setFormAssignedOfficeId] = useState<string>('');
+  const [formAssignedOfficeName, setFormAssignedOfficeName] = useState<string>('');
+  const [formOfficeLatitude, setFormOfficeLatitude] = useState<string>('');
+  const [formOfficeLongitude, setFormOfficeLongitude] = useState<string>('');
+  const [formAllowedRadiusMeters, setFormAllowedRadiusMeters] = useState<number | ''>('');
+  const [formOfficeAddress, setFormOfficeAddress] = useState<string>('');
+  const [formLocationStatus, setFormLocationStatus] = useState<'Active' | 'Inactive' | ''>('');
+  const [formShiftStartTime, setFormShiftStartTime] = useState<string>('');
+  const [formShiftEndTime, setFormShiftEndTime] = useState<string>('');
+  const [formGracePeriodMinutes, setFormGracePeriodMinutes] = useState<number | ''>('');
   const [gpsCaptureStatus, setGpsCaptureStatus] = useState<string>('');
 
   // Dynamic merged market hierarchy options (from stored list + orgHierarchy tree)
@@ -421,8 +421,8 @@ export const FieldForcePage: React.FC = () => {
     setFormMarketHierarchy('');
     setMarketHierarchySearch('');
     setShowMarketDropdown(false);
-    setFormRegion('Dhaka North');
-    setFormArea('Mirpur');
+    setFormRegion('');
+    setFormArea('');
     setFormTerritory('');
     setSelectedDepartments([]);
     setAllDepartmentsChecked(false);
@@ -430,15 +430,15 @@ export const FieldForcePage: React.FC = () => {
     setSelectedDistributorId('');
     setSelectedDistributorName('');
     setParentCode('');
-    setInvoiceWithinDays(3);
-    setAppPermissions('Full Mobile Order & GPS Telemetry');
-    setFieldForceTags('Core Field Force');
-    setCustomerTags('All Customer Channels');
-    setMonthlyTargetBDT(2500000);
-    setBasicSalaryBDT(30000);
-    setFormConveyanceBDT(6000);
-    setFormTaDaBDT(5000);
-    setFormMobileAllowanceBDT(1500);
+    setInvoiceWithinDays('');
+    setAppPermissions('');
+    setFieldForceTags('');
+    setCustomerTags('');
+    setMonthlyTargetBDT('');
+    setBasicSalaryBDT('');
+    setFormConveyanceBDT('');
+    setFormTaDaBDT('');
+    setFormMobileAllowanceBDT('');
     setFormStatus('Active');
     setFormEmployeeCategory('Field Employee');
     setFormEmploymentType('Permanent');
@@ -448,9 +448,9 @@ export const FieldForcePage: React.FC = () => {
     setFormEmergencyContactName('');
     setFormEmergencyContactPhone('');
     setFormEmergencyContactRelation('');
-    setFormBankName('Eastern Bank PLC');
+    setFormBankName('');
     setFormBankAccountNumber('');
-    setFormBankBranch('Gulshan Branch');
+    setFormBankBranch('');
     setFormRoutingNumber('');
     setFormMobileBankingProvider('bKash');
     setFormMobileBankingNumber('');
@@ -463,19 +463,17 @@ export const FieldForcePage: React.FC = () => {
     setFormOvertimeEffectiveFrom(new Date().toISOString().substring(0, 10));
     setFormOvertimePolicyStatus('Active');
     setFormOvertimePolicyNotes('');
-    const defaultApprover = users.find((u) => u.role === 'Sales Head' || u.role === 'Super Admin') || users[0];
-    setFormTadaApproverId(defaultApprover?.id || '');
-    const defaultOffice = officeLocations.find((o) => o.status === 'Active') || officeLocations[0];
-    setFormAssignedOfficeId(defaultOffice?.id || 'office-hq');
-    setFormAssignedOfficeName(defaultOffice?.name || 'Head Office (Gulshan HQ)');
-    setFormOfficeLatitude(String(defaultOffice?.latitude ?? 23.8103));
-    setFormOfficeLongitude(String(defaultOffice?.longitude ?? 90.4125));
-    setFormAllowedRadiusMeters(defaultOffice?.allowedRadiusMeters || DEFAULT_ALLOWED_RADIUS_METERS);
-    setFormOfficeAddress(defaultOffice?.address || 'House 14, Road 11, Gulshan-1, Dhaka-1212');
-    setFormLocationStatus(defaultOffice?.status || 'Active');
-    setFormShiftStartTime(DEFAULT_SHIFT_START_TIME);
-    setFormShiftEndTime(DEFAULT_SHIFT_END_TIME);
-    setFormGracePeriodMinutes(DEFAULT_GRACE_PERIOD_MINUTES);
+    setFormTadaApproverId('');
+    setFormAssignedOfficeId('');
+    setFormAssignedOfficeName('');
+    setFormOfficeLatitude('');
+    setFormOfficeLongitude('');
+    setFormAllowedRadiusMeters('');
+    setFormOfficeAddress('');
+    setFormLocationStatus('');
+    setFormShiftStartTime('');
+    setFormShiftEndTime('');
+    setFormGracePeriodMinutes('');
     setFormLinkedUserId('');
     setGpsCaptureStatus('');
     setDepartmentError('');
@@ -517,8 +515,8 @@ export const FieldForcePage: React.FC = () => {
     
     const hierarchyVal = rep.marketHierarchy || rep.territory || '';
     setFormMarketHierarchy(hierarchyVal);
-    setFormRegion(rep.region || 'Dhaka North');
-    setFormArea(rep.area || 'Mirpur');
+    setFormRegion(rep.region || '');
+    setFormArea(rep.area || '');
     setFormTerritory(rep.territory || hierarchyVal);
     setMarketHierarchySearch('');
     setShowMarketDropdown(false);
@@ -544,18 +542,18 @@ export const FieldForcePage: React.FC = () => {
         availableDepartmentOptions.every((opt) => cleanedDepts.includes(opt))
     );
     setAllMarketsChecked(true);
-    setSelectedDistributorId(rep.distributorId || distributors[0]?.id || '');
-    setSelectedDistributorName(rep.distributorName || distributors[0]?.name || '');
-    setParentCode(rep.parentCode || cleanFieldForceReps[0]?.code || 'MGT-01');
-    setInvoiceWithinDays(rep.invoiceWithinDays || 3);
-    setAppPermissions(rep.appPermissions?.[0] || 'Full Mobile Order & GPS Telemetry');
-    setFieldForceTags(rep.fieldForceTags?.[0] || 'Core Field Force');
-    setCustomerTags(rep.customerTags?.[0] || 'All Customer Channels');
-    setMonthlyTargetBDT(rep.monthlyTargetBDT ?? 2500000);
-    setBasicSalaryBDT(rep.basicSalaryBDT ?? 30000);
-    setFormConveyanceBDT(rep.conveyanceBDT ?? 6000);
-    setFormTaDaBDT(rep.taDaBDT ?? 5000);
-    setFormMobileAllowanceBDT(rep.mobileAllowanceBDT ?? 1500);
+    setSelectedDistributorId(rep.distributorId || '');
+    setSelectedDistributorName(rep.distributorName || '');
+    setParentCode(rep.parentCode || '');
+    setInvoiceWithinDays(rep.invoiceWithinDays !== undefined && rep.invoiceWithinDays !== null ? rep.invoiceWithinDays : '');
+    setAppPermissions(rep.appPermissions?.[0] || '');
+    setFieldForceTags(rep.fieldForceTags?.[0] || '');
+    setCustomerTags(rep.customerTags?.[0] || '');
+    setMonthlyTargetBDT(rep.monthlyTargetBDT !== undefined && rep.monthlyTargetBDT !== null ? rep.monthlyTargetBDT : '');
+    setBasicSalaryBDT(rep.basicSalaryBDT !== undefined && rep.basicSalaryBDT !== null ? rep.basicSalaryBDT : '');
+    setFormConveyanceBDT(rep.conveyanceBDT !== undefined && rep.conveyanceBDT !== null ? rep.conveyanceBDT : '');
+    setFormTaDaBDT(rep.taDaBDT !== undefined && rep.taDaBDT !== null ? rep.taDaBDT : '');
+    setFormMobileAllowanceBDT(rep.mobileAllowanceBDT !== undefined && rep.mobileAllowanceBDT !== null ? rep.mobileAllowanceBDT : '');
     setFormStatus((rep.status as any) || (rep.isActive === false ? 'Inactive' : 'Active'));
 
     // Extended HR & Banking details
@@ -567,25 +565,43 @@ export const FieldForcePage: React.FC = () => {
     setFormEmergencyContactName(rep.emergencyContactName || '');
     setFormEmergencyContactPhone(rep.emergencyContactPhone || '');
     setFormEmergencyContactRelation(rep.emergencyContactRelation || '');
-    setFormBankName(rep.bankName || 'Eastern Bank PLC');
+    setFormBankName(rep.bankName || '');
     setFormBankAccountNumber(rep.bankAccountNumber || '');
-    setFormBankBranch(rep.bankBranch || 'Gulshan Branch');
+    setFormBankBranch(rep.bankBranch || '');
     setFormRoutingNumber(rep.routingNumber || '');
     setFormMobileBankingProvider(rep.mobileBankingProvider || 'bKash');
     setFormMobileBankingNumber(rep.mobileBankingNumber || '');
 
     // GPS Geofencing & Shift fields
-    const matchedOffice = officeLocations.find((o) => o.id === rep.assignedOfficeId) || officeLocations[0];
-    setFormAssignedOfficeId(rep.assignedOfficeId || matchedOffice?.id || 'office-hq');
-    setFormAssignedOfficeName(rep.assignedOfficeName || matchedOffice?.name || rep.branchWorkplace || 'Head Office (Gulshan HQ)');
-    setFormOfficeLatitude(String(rep.officeLatitude ?? matchedOffice?.latitude ?? 23.8103));
-    setFormOfficeLongitude(String(rep.officeLongitude ?? matchedOffice?.longitude ?? 90.4125));
-    setFormAllowedRadiusMeters(Number(rep.allowedRadiusMeters) || matchedOffice?.allowedRadiusMeters || DEFAULT_ALLOWED_RADIUS_METERS);
+    const matchedOffice = rep.assignedOfficeId
+      ? officeLocations.find((o) => o.id === rep.assignedOfficeId)
+      : undefined;
+    setFormAssignedOfficeId(rep.assignedOfficeId || '');
+    setFormAssignedOfficeName(rep.assignedOfficeName || matchedOffice?.name || rep.branchWorkplace || '');
+    setFormOfficeLatitude(
+      rep.officeLatitude !== undefined && rep.officeLatitude !== null
+        ? String(rep.officeLatitude)
+        : (matchedOffice ? String(matchedOffice.latitude) : '')
+    );
+    setFormOfficeLongitude(
+      rep.officeLongitude !== undefined && rep.officeLongitude !== null
+        ? String(rep.officeLongitude)
+        : (matchedOffice ? String(matchedOffice.longitude) : '')
+    );
+    setFormAllowedRadiusMeters(
+      rep.allowedRadiusMeters !== undefined && rep.allowedRadiusMeters !== null
+        ? Number(rep.allowedRadiusMeters)
+        : (matchedOffice?.allowedRadiusMeters ?? '')
+    );
     setFormOfficeAddress(rep.officeAddress || matchedOffice?.address || '');
-    setFormLocationStatus(rep.locationStatus || matchedOffice?.status || 'Active');
-    setFormShiftStartTime(rep.shiftStartTime || DEFAULT_SHIFT_START_TIME);
-    setFormShiftEndTime(rep.shiftEndTime || DEFAULT_SHIFT_END_TIME);
-    setFormGracePeriodMinutes(rep.gracePeriodMinutes ?? DEFAULT_GRACE_PERIOD_MINUTES);
+    setFormLocationStatus((rep.locationStatus as 'Active' | 'Inactive') || matchedOffice?.status || '');
+    setFormShiftStartTime(rep.shiftStartTime || '');
+    setFormShiftEndTime(rep.shiftEndTime || '');
+    setFormGracePeriodMinutes(
+      rep.gracePeriodMinutes !== undefined && rep.gracePeriodMinutes !== null
+        ? rep.gracePeriodMinutes
+        : ''
+    );
     setFormLinkedUserId(rep.userId || '');
     setGpsCaptureStatus('');
   };
@@ -651,9 +667,9 @@ export const FieldForcePage: React.FC = () => {
     );
 
     // Derive region and territory safely from the market hierarchy tag
-    const resolvedRegion = matchedHierarchy?.region || formRegion || 'Dhaka North';
-    const resolvedArea = matchedHierarchy?.area || formArea || 'Mirpur';
-    const resolvedTerritory = matchedHierarchy?.name || formTerritory || formMarketHierarchy || 'Mirpur';
+    const resolvedRegion = matchedHierarchy?.region || formRegion.trim() || '';
+    const resolvedArea = matchedHierarchy?.area || formArea.trim() || '';
+    const resolvedTerritory = matchedHierarchy?.name || formTerritory.trim() || formMarketHierarchy.trim() || '';
     const selectedTadaApprover = users.find((u) => u.id === formTadaApproverId);
     const reportingMgr = parentCode ? cleanFieldForceReps.find((r) => r.code === parentCode) : undefined;
 
@@ -683,16 +699,16 @@ export const FieldForcePage: React.FC = () => {
       reportingManagerName: reportingMgr ? `${reportingMgr.name} (${reportingMgr.code})` : undefined,
       joiningDate: formJoiningDate,
       discontinueDate: formDiscontinueDate || undefined,
-      invoiceWithinDays,
-      appPermissions: [appPermissions],
-      fieldForceTags: [fieldForceTags],
-      customerTags: [customerTags],
-      monthlyTargetBDT: Number(monthlyTargetBDT) || 0,
+      invoiceWithinDays: invoiceWithinDays === '' ? undefined : Number(invoiceWithinDays),
+      appPermissions: appPermissions ? [appPermissions] : [],
+      fieldForceTags: fieldForceTags ? [fieldForceTags] : [],
+      customerTags: customerTags ? [customerTags] : [],
+      monthlyTargetBDT: monthlyTargetBDT === '' ? 0 : Number(monthlyTargetBDT),
       monthlyAchievedBDT: 0,
-      basicSalaryBDT: Number(basicSalaryBDT) || 0,
-      conveyanceBDT: Number(formConveyanceBDT) || 0,
-      taDaBDT: Number(formTaDaBDT) || 0,
-      mobileAllowanceBDT: Number(formMobileAllowanceBDT) || 0,
+      basicSalaryBDT: basicSalaryBDT === '' ? 0 : Number(basicSalaryBDT),
+      conveyanceBDT: formConveyanceBDT === '' ? 0 : Number(formConveyanceBDT),
+      taDaBDT: formTaDaBDT === '' ? 0 : Number(formTaDaBDT),
+      mobileAllowanceBDT: formMobileAllowanceBDT === '' ? 0 : Number(formMobileAllowanceBDT),
       tadaApproverId: selectedTadaApprover?.id || undefined,
       tadaApproverName: selectedTadaApprover ? `${selectedTadaApprover.name} (${selectedTadaApprover.role})` : undefined,
       nationalId: formNationalId.trim() || undefined,
@@ -713,17 +729,17 @@ export const FieldForcePage: React.FC = () => {
       status: formStatus,
       isActive: formStatus === 'Active',
       // Office GPS Geofencing & Shift Setup
-      assignedOfficeId: formAssignedOfficeId || 'custom',
-      assignedOfficeName: formAssignedOfficeName.trim() || 'Assigned Office',
-      branchWorkplace: formAssignedOfficeName.trim() || 'Head Office',
-      officeLatitude: Number(formOfficeLatitude) || 23.8103,
-      officeLongitude: Number(formOfficeLongitude) || 90.4125,
-      allowedRadiusMeters: Number(formAllowedRadiusMeters) > 0 ? Number(formAllowedRadiusMeters) : DEFAULT_ALLOWED_RADIUS_METERS,
+      assignedOfficeId: formAssignedOfficeId || undefined,
+      assignedOfficeName: formAssignedOfficeName.trim() || undefined,
+      branchWorkplace: formAssignedOfficeName.trim() || undefined,
+      officeLatitude: formOfficeLatitude !== '' && !isNaN(Number(formOfficeLatitude)) ? Number(formOfficeLatitude) : undefined,
+      officeLongitude: formOfficeLongitude !== '' && !isNaN(Number(formOfficeLongitude)) ? Number(formOfficeLongitude) : undefined,
+      allowedRadiusMeters: formAllowedRadiusMeters !== '' && Number(formAllowedRadiusMeters) > 0 ? Number(formAllowedRadiusMeters) : undefined,
       officeAddress: formOfficeAddress.trim() || undefined,
-      locationStatus: formLocationStatus,
-      shiftStartTime: formShiftStartTime || DEFAULT_SHIFT_START_TIME,
-      shiftEndTime: formShiftEndTime || DEFAULT_SHIFT_END_TIME,
-      gracePeriodMinutes: Number(formGracePeriodMinutes) >= 0 ? Number(formGracePeriodMinutes) : DEFAULT_GRACE_PERIOD_MINUTES,
+      locationStatus: (formLocationStatus || undefined) as 'Active' | 'Inactive' | undefined,
+      shiftStartTime: formShiftStartTime || undefined,
+      shiftEndTime: formShiftEndTime || undefined,
+      gracePeriodMinutes: formGracePeriodMinutes !== '' && Number(formGracePeriodMinutes) >= 0 ? Number(formGracePeriodMinutes) : undefined,
       // Individual Overtime Policy Configuration
       isOvertimeEligible: formIsOvertimeEligible,
       overtimeCalculationBasis: formOvertimeCalculationBasis,
@@ -739,7 +755,7 @@ export const FieldForcePage: React.FC = () => {
       currentLocation: {
         latitude: Number(formOfficeLatitude) || 23.8103,
         longitude: Number(formOfficeLongitude) || 90.4125,
-        address: `${formMarketHierarchy || resolvedTerritory || 'Dhaka'}, Bangladesh`,
+        address: formMarketHierarchy || resolvedTerritory ? `${formMarketHierarchy || resolvedTerritory}, Bangladesh` : 'Bangladesh',
         lastUpdated: 'New Registration',
         speedKmH: 0,
         batteryLevel: 100,
@@ -773,9 +789,9 @@ export const FieldForcePage: React.FC = () => {
       (m) => m.fullName.toLowerCase() === formMarketHierarchy.toLowerCase()
     );
 
-    const resolvedRegion = matchedHierarchy?.region || formRegion || editingRep.region || 'Dhaka North';
-    const resolvedArea = matchedHierarchy?.area || formArea || editingRep.area || 'Mirpur';
-    const resolvedTerritory = matchedHierarchy?.name || formTerritory || formMarketHierarchy || editingRep.territory || 'Mirpur';
+    const resolvedRegion = matchedHierarchy?.region || formRegion.trim() || '';
+    const resolvedArea = matchedHierarchy?.area || formArea.trim() || '';
+    const resolvedTerritory = matchedHierarchy?.name || formTerritory.trim() || formMarketHierarchy.trim() || '';
     const selectedTadaApprover = users.find((u) => u.id === formTadaApproverId);
 
     // Check if Overtime Policy was amended, and archive old version to policy history if changed
@@ -831,17 +847,17 @@ export const FieldForcePage: React.FC = () => {
       parentCode: parentCode.trim() || undefined,
       joiningDate: formJoiningDate,
       discontinueDate: formDiscontinueDate || undefined,
-      invoiceWithinDays,
-      appPermissions: [appPermissions],
-      fieldForceTags: [fieldForceTags],
-      customerTags: [customerTags],
-      monthlyTargetBDT: Number(monthlyTargetBDT) || 0,
-      basicSalaryBDT: Number(basicSalaryBDT) || 0,
-      conveyanceBDT: Number(formConveyanceBDT) || 0,
-      taDaBDT: Number(formTaDaBDT) || 0,
-      mobileAllowanceBDT: Number(formMobileAllowanceBDT) || 0,
-      tadaApproverId: selectedTadaApprover?.id || undefined,
-      tadaApproverName: selectedTadaApprover ? `${selectedTadaApprover.name} (${selectedTadaApprover.role})` : undefined,
+      invoiceWithinDays: invoiceWithinDays === '' ? undefined : Number(invoiceWithinDays),
+      appPermissions: appPermissions ? [appPermissions] : [],
+      fieldForceTags: fieldForceTags ? [fieldForceTags] : [],
+      customerTags: customerTags ? [customerTags] : [],
+      monthlyTargetBDT: monthlyTargetBDT === '' ? 0 : Number(monthlyTargetBDT),
+      basicSalaryBDT: basicSalaryBDT === '' ? 0 : Number(basicSalaryBDT),
+      conveyanceBDT: formConveyanceBDT === '' ? 0 : Number(formConveyanceBDT),
+      taDaBDT: formTaDaBDT === '' ? 0 : Number(formTaDaBDT),
+      mobileAllowanceBDT: formMobileAllowanceBDT === '' ? 0 : Number(formMobileAllowanceBDT),
+      tadaApproverId: selectedTadaApprover?.id || '',
+      tadaApproverName: selectedTadaApprover ? `${selectedTadaApprover.name} (${selectedTadaApprover.role})` : '',
       status: formStatus,
       isActive: formStatus === 'Active',
 
@@ -872,17 +888,17 @@ export const FieldForcePage: React.FC = () => {
       mobileBankingProvider: formMobileBankingProvider || undefined,
       mobileBankingNumber: formMobileBankingNumber.trim() || undefined,
       // Office GPS Geofencing & Shift Setup
-      assignedOfficeId: formAssignedOfficeId || 'custom',
-      assignedOfficeName: formAssignedOfficeName.trim() || 'Assigned Office',
+      assignedOfficeId: formAssignedOfficeId || '',
+      assignedOfficeName: formAssignedOfficeName.trim() || '',
       branchWorkplace: formAssignedOfficeName.trim() || editingRep.branchWorkplace,
-      officeLatitude: Number(formOfficeLatitude) || 23.8103,
-      officeLongitude: Number(formOfficeLongitude) || 90.4125,
-      allowedRadiusMeters: Number(formAllowedRadiusMeters) > 0 ? Number(formAllowedRadiusMeters) : DEFAULT_ALLOWED_RADIUS_METERS,
-      officeAddress: formOfficeAddress.trim() || undefined,
-      locationStatus: formLocationStatus,
-      shiftStartTime: formShiftStartTime || DEFAULT_SHIFT_START_TIME,
-      shiftEndTime: formShiftEndTime || DEFAULT_SHIFT_END_TIME,
-      gracePeriodMinutes: Number(formGracePeriodMinutes) >= 0 ? Number(formGracePeriodMinutes) : DEFAULT_GRACE_PERIOD_MINUTES,
+      officeLatitude: formOfficeLatitude !== '' && !isNaN(Number(formOfficeLatitude)) ? Number(formOfficeLatitude) : undefined,
+      officeLongitude: formOfficeLongitude !== '' && !isNaN(Number(formOfficeLongitude)) ? Number(formOfficeLongitude) : undefined,
+      allowedRadiusMeters: formAllowedRadiusMeters !== '' && Number(formAllowedRadiusMeters) > 0 ? Number(formAllowedRadiusMeters) : undefined,
+      officeAddress: formOfficeAddress.trim() || '',
+      locationStatus: (formLocationStatus || undefined) as 'Active' | 'Inactive' | undefined,
+      shiftStartTime: formShiftStartTime || '',
+      shiftEndTime: formShiftEndTime || '',
+      gracePeriodMinutes: formGracePeriodMinutes !== '' && Number(formGracePeriodMinutes) >= 0 ? Number(formGracePeriodMinutes) : undefined,
     });
 
     addAuditLog(
@@ -1957,7 +1973,8 @@ export const FieldForcePage: React.FC = () => {
                         min={0}
                         max={30}
                         value={invoiceWithinDays}
-                        onChange={(e) => setInvoiceWithinDays(e.target.value === '' ? 0 : Number(e.target.value))}
+                        onChange={(e) => setInvoiceWithinDays(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="e.g. 3"
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
@@ -2428,7 +2445,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={monthlyTargetBDT}
-                        onChange={(e) => setMonthlyTargetBDT(Number(e.target.value))}
+                        onChange={(e) => setMonthlyTargetBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
@@ -2441,7 +2458,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={basicSalaryBDT}
-                        onChange={(e) => setBasicSalaryBDT(Number(e.target.value))}
+                        onChange={(e) => setBasicSalaryBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
@@ -2454,7 +2471,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={formConveyanceBDT}
-                        onChange={(e) => setFormConveyanceBDT(Number(e.target.value))}
+                        onChange={(e) => setFormConveyanceBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       />
                     </div>
@@ -2467,7 +2484,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={formTaDaBDT}
-                        onChange={(e) => setFormTaDaBDT(Number(e.target.value))}
+                        onChange={(e) => setFormTaDaBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       />
                     </div>
@@ -2480,7 +2497,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={formMobileAllowanceBDT}
-                        onChange={(e) => setFormMobileAllowanceBDT(Number(e.target.value))}
+                        onChange={(e) => setFormMobileAllowanceBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       />
                     </div>
@@ -2713,7 +2730,7 @@ export const FieldForcePage: React.FC = () => {
                         <span className="text-[10px] text-slate-400 font-mono">
                           {formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                             ? `Fixed Rate: ৳${formOvertimeFixedRate}/hr × ${formOvertimeMultiplier}x`
-                            : `Basic ৳${(Number(basicSalaryBDT) || 30000).toLocaleString()} ÷ ${formOvertimeStandardHours}h × ${formOvertimeMultiplier}x`}
+                            : `Basic ৳${(Number(basicSalaryBDT) || 0).toLocaleString()} ÷ ${formOvertimeStandardHours}h × ${formOvertimeMultiplier}x`}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1 border-t border-slate-800">
@@ -2722,7 +2739,7 @@ export const FieldForcePage: React.FC = () => {
                           <span className="font-mono font-bold text-white text-xs">
                             ৳{formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                               ? Number(formOvertimeFixedRate || 0).toFixed(2)
-                              : ((Number(basicSalaryBDT) || 30000) / (Number(formOvertimeStandardHours) || 208)).toFixed(2)} / hr
+                              : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208)).toFixed(2)} / hr
                           </span>
                         </div>
                         <div>
@@ -2737,7 +2754,7 @@ export const FieldForcePage: React.FC = () => {
                             ৳{(
                               (formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                                 ? Number(formOvertimeFixedRate || 0)
-                                : ((Number(basicSalaryBDT) || 30000) / (Number(formOvertimeStandardHours) || 208))) *
+                                : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208))) *
                               Number(formOvertimeMultiplier || 2.0)
                             ).toFixed(2)} / hr
                           </span>
@@ -2748,7 +2765,7 @@ export const FieldForcePage: React.FC = () => {
                             ৳{Math.round(
                               (formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                                 ? Number(formOvertimeFixedRate || 0)
-                                : ((Number(basicSalaryBDT) || 30000) / (Number(formOvertimeStandardHours) || 208))) *
+                                : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208))) *
                               Number(formOvertimeMultiplier || 2.0) * 2
                             ).toLocaleString()}
                           </span>
@@ -2777,6 +2794,7 @@ export const FieldForcePage: React.FC = () => {
                         onChange={(e) => setAppPermissions(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                       >
+                        <option value="">-- Select App Permissions --</option>
                         {APP_PERMISSIONS_LIST.map((perm) => (
                           <option key={perm} value={perm}>
                             {perm}
@@ -2795,6 +2813,7 @@ export const FieldForcePage: React.FC = () => {
                         onChange={(e) => setFieldForceTags(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       >
+                        <option value="">-- Select Field Force Tag --</option>
                         {FIELD_FORCE_TAGS_LIST.map((tag) => (
                           <option key={tag} value={tag}>
                             {tag}
@@ -2813,6 +2832,7 @@ export const FieldForcePage: React.FC = () => {
                         onChange={(e) => setCustomerTags(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       >
+                        <option value="">-- Select Customer Channel Tag --</option>
                         {CUSTOMER_TAGS_LIST.map((tag) => (
                           <option key={tag} value={tag}>
                             {tag}
@@ -2921,10 +2941,18 @@ export const FieldForcePage: React.FC = () => {
                             setFormAllowedRadiusMeters(matched.allowedRadiusMeters || DEFAULT_ALLOWED_RADIUS_METERS);
                             setFormOfficeAddress(matched.address || '');
                             setFormLocationStatus(matched.status || 'Active');
+                          } else if (val === '') {
+                            setFormAssignedOfficeName('');
+                            setFormOfficeLatitude('');
+                            setFormOfficeLongitude('');
+                            setFormAllowedRadiusMeters('');
+                            setFormOfficeAddress('');
+                            setFormLocationStatus('');
                           }
                         }}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
                       >
+                        <option value="">-- Select Assigned Office / HQ --</option>
                         {officeLocations.map((loc) => (
                           <option key={loc.id} value={loc.id}>
                             {loc.name} ({loc.allowedRadiusMeters}m) {loc.status === 'Inactive' ? '[Inactive]' : ''}
@@ -2953,9 +2981,10 @@ export const FieldForcePage: React.FC = () => {
                       </label>
                       <select
                         value={formLocationStatus}
-                        onChange={(e) => setFormLocationStatus(e.target.value as 'Active' | 'Inactive')}
+                        onChange={(e) => setFormLocationStatus(e.target.value as 'Active' | 'Inactive' | '')}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
                       >
+                        <option value="">-- Select Location Status --</option>
                         <option value="Active">Active (Geofence Enforced)</option>
                         <option value="Inactive">Inactive (Blocked)</option>
                       </select>
@@ -2998,7 +3027,8 @@ export const FieldForcePage: React.FC = () => {
                         min={10}
                         max={5000}
                         value={formAllowedRadiusMeters}
-                        onChange={(e) => setFormAllowedRadiusMeters(Math.max(10, Number(e.target.value) || DEFAULT_ALLOWED_RADIUS_METERS))}
+                        onChange={(e) => setFormAllowedRadiusMeters(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="200"
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold tabular-nums"
                       />
                       <span className="text-[10px] text-slate-400">Default: 200 Meters</span>
@@ -3050,7 +3080,8 @@ export const FieldForcePage: React.FC = () => {
                         min={0}
                         max={120}
                         value={formGracePeriodMinutes}
-                        onChange={(e) => setFormGracePeriodMinutes(Math.max(0, Number(e.target.value) || 0))}
+                        onChange={(e) => setFormGracePeriodMinutes(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
+                        placeholder="15"
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                       />
                     </div>
@@ -3346,7 +3377,8 @@ export const FieldForcePage: React.FC = () => {
                         min={0}
                         max={30}
                         value={invoiceWithinDays}
-                        onChange={(e) => setInvoiceWithinDays(e.target.value === '' ? 0 : Number(e.target.value))}
+                        onChange={(e) => setInvoiceWithinDays(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="e.g. 3"
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
@@ -3819,7 +3851,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={monthlyTargetBDT}
-                        onChange={(e) => setMonthlyTargetBDT(Number(e.target.value))}
+                        onChange={(e) => setMonthlyTargetBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
@@ -3832,7 +3864,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={basicSalaryBDT}
-                        onChange={(e) => setBasicSalaryBDT(Number(e.target.value))}
+                        onChange={(e) => setBasicSalaryBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
@@ -3845,7 +3877,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={formConveyanceBDT}
-                        onChange={(e) => setFormConveyanceBDT(Number(e.target.value))}
+                        onChange={(e) => setFormConveyanceBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       />
                     </div>
@@ -3858,7 +3890,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={formTaDaBDT}
-                        onChange={(e) => setFormTaDaBDT(Number(e.target.value))}
+                        onChange={(e) => setFormTaDaBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       />
                     </div>
@@ -3871,7 +3903,7 @@ export const FieldForcePage: React.FC = () => {
                       <input
                         type="number"
                         value={formMobileAllowanceBDT}
-                        onChange={(e) => setFormMobileAllowanceBDT(Number(e.target.value))}
+                        onChange={(e) => setFormMobileAllowanceBDT(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       />
                     </div>
@@ -4104,7 +4136,7 @@ export const FieldForcePage: React.FC = () => {
                         <span className="text-[10px] text-slate-400 font-mono">
                           {formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                             ? `Fixed Rate: ৳${formOvertimeFixedRate}/hr × ${formOvertimeMultiplier}x`
-                            : `Basic ৳${(Number(basicSalaryBDT) || 30000).toLocaleString()} ÷ ${formOvertimeStandardHours}h × ${formOvertimeMultiplier}x`}
+                            : `Basic ৳${(Number(basicSalaryBDT) || 0).toLocaleString()} ÷ ${formOvertimeStandardHours}h × ${formOvertimeMultiplier}x`}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1 border-t border-slate-800">
@@ -4113,7 +4145,7 @@ export const FieldForcePage: React.FC = () => {
                           <span className="font-mono font-bold text-white text-xs">
                             ৳{formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                               ? Number(formOvertimeFixedRate || 0).toFixed(2)
-                              : ((Number(basicSalaryBDT) || 30000) / (Number(formOvertimeStandardHours) || 208)).toFixed(2)} / hr
+                              : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208)).toFixed(2)} / hr
                           </span>
                         </div>
                         <div>
@@ -4128,7 +4160,7 @@ export const FieldForcePage: React.FC = () => {
                             ৳{(
                               (formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                                 ? Number(formOvertimeFixedRate || 0)
-                                : ((Number(basicSalaryBDT) || 30000) / (Number(formOvertimeStandardHours) || 208))) *
+                                : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208))) *
                               Number(formOvertimeMultiplier || 2.0)
                             ).toFixed(2)} / hr
                           </span>
@@ -4139,7 +4171,7 @@ export const FieldForcePage: React.FC = () => {
                             ৳{Math.round(
                               (formOvertimeCalculationBasis === 'Fixed Hourly Rate'
                                 ? Number(formOvertimeFixedRate || 0)
-                                : ((Number(basicSalaryBDT) || 30000) / (Number(formOvertimeStandardHours) || 208))) *
+                                : ((Number(basicSalaryBDT) || 0) / (Number(formOvertimeStandardHours) || 208))) *
                               Number(formOvertimeMultiplier || 2.0) * 2
                             ).toLocaleString()}
                           </span>
@@ -4221,6 +4253,7 @@ export const FieldForcePage: React.FC = () => {
                         onChange={(e) => setAppPermissions(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                       >
+                        <option value="">-- Select App Permissions --</option>
                         {APP_PERMISSIONS_LIST.map((perm) => (
                           <option key={perm} value={perm}>
                             {perm}
@@ -4239,6 +4272,7 @@ export const FieldForcePage: React.FC = () => {
                         onChange={(e) => setFieldForceTags(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       >
+                        <option value="">-- Select Field Force Tag --</option>
                         {FIELD_FORCE_TAGS_LIST.map((tag) => (
                           <option key={tag} value={tag}>
                             {tag}
@@ -4257,6 +4291,7 @@ export const FieldForcePage: React.FC = () => {
                         onChange={(e) => setCustomerTags(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       >
+                        <option value="">-- Select Customer Channel Tag --</option>
                         {CUSTOMER_TAGS_LIST.map((tag) => (
                           <option key={tag} value={tag}>
                             {tag}
@@ -4365,10 +4400,18 @@ export const FieldForcePage: React.FC = () => {
                             setFormAllowedRadiusMeters(matched.allowedRadiusMeters || DEFAULT_ALLOWED_RADIUS_METERS);
                             setFormOfficeAddress(matched.address || '');
                             setFormLocationStatus(matched.status || 'Active');
+                          } else if (val === '') {
+                            setFormAssignedOfficeName('');
+                            setFormOfficeLatitude('');
+                            setFormOfficeLongitude('');
+                            setFormAllowedRadiusMeters('');
+                            setFormOfficeAddress('');
+                            setFormLocationStatus('');
                           }
                         }}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
                       >
+                        <option value="">-- Select Assigned Office / HQ --</option>
                         {officeLocations.map((loc) => (
                           <option key={loc.id} value={loc.id}>
                             {loc.name} ({loc.allowedRadiusMeters}m) {loc.status === 'Inactive' ? '[Inactive]' : ''}
@@ -4397,9 +4440,10 @@ export const FieldForcePage: React.FC = () => {
                       </label>
                       <select
                         value={formLocationStatus}
-                        onChange={(e) => setFormLocationStatus(e.target.value as 'Active' | 'Inactive')}
+                        onChange={(e) => setFormLocationStatus(e.target.value as 'Active' | 'Inactive' | '')}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
                       >
+                        <option value="">-- Select Location Status --</option>
                         <option value="Active">Active (Geofence Enforced)</option>
                         <option value="Inactive">Inactive (Blocked)</option>
                       </select>
@@ -4442,7 +4486,8 @@ export const FieldForcePage: React.FC = () => {
                         min={10}
                         max={5000}
                         value={formAllowedRadiusMeters}
-                        onChange={(e) => setFormAllowedRadiusMeters(Math.max(10, Number(e.target.value) || DEFAULT_ALLOWED_RADIUS_METERS))}
+                        onChange={(e) => setFormAllowedRadiusMeters(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="200"
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold tabular-nums"
                       />
                       <span className="text-[10px] text-slate-400">Default: 200 Meters</span>
@@ -4494,7 +4539,8 @@ export const FieldForcePage: React.FC = () => {
                         min={0}
                         max={120}
                         value={formGracePeriodMinutes}
-                        onChange={(e) => setFormGracePeriodMinutes(Math.max(0, Number(e.target.value) || 0))}
+                        onChange={(e) => setFormGracePeriodMinutes(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
+                        placeholder="15"
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                       />
                     </div>
