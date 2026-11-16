@@ -4045,7 +4045,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               photoUrl: row.photo_url || undefined,
               gender: row.gender || undefined,
               employeeCategory: row.employee_category || 'Field Employee',
-              employmentType: row.employment_type || 'Permanent',
+              employmentType: row.employment_type || undefined,
               employmentStatus: row.employment_status || (row.is_active === false ? 'Inactive' : 'Active'),
               presentAddress: row.present_address || undefined,
               permanentAddress: row.permanent_address || undefined,
@@ -15379,7 +15379,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         invoice_within_days: newRep.invoiceWithinDays ?? null,
         employee_category: newRep.employeeCategory,
         gender: newRep.gender || null,
-        employment_type: newRep.employmentType,
+        employment_type: newRep.employmentType || null,
         employment_status: newRep.employmentStatus,
         present_address: newRep.presentAddress,
         permanent_address: newRep.permanentAddress,
@@ -15516,7 +15516,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (updates.photoUrl !== undefined) payload.photo_url = updates.photoUrl;
       if (updates.gender !== undefined) payload.gender = updates.gender || null;
       if (updates.employeeCategory !== undefined) payload.employee_category = updates.employeeCategory;
-      if (updates.employmentType !== undefined) payload.employment_type = updates.employmentType;
+      if (updates.employmentType !== undefined) payload.employment_type = updates.employmentType || null;
       if (updates.employmentStatus !== undefined) payload.employment_status = updates.employmentStatus;
       if (updates.presentAddress !== undefined) payload.present_address = updates.presentAddress;
       if (updates.permanentAddress !== undefined) payload.permanent_address = updates.permanentAddress;
